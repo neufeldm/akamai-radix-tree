@@ -1,0 +1,13 @@
+The Akamai Radix Tree uses CMake for configuration, building, and installing. The core
+library is header-only, so installing simply involves copying the relevant headers to
+an accessible location. Optionally unit tests, sample applications, and Doxygen-generated
+documentation may also be built, though these are disabled by default. The following
+CMake definitions control whether these optional subcomponents are built:
+
+* AKAMAI_MAPPER_RADIXTREE_TEST *Build/run unit tests (OFF)*
+* AKAMAI_MAPPER_RADIXTREE_DOCS *Build Doxygen documentation (OFF)*
+* AKAMAI_MAPPER_RADIXTREE_EXAMPLES *Build RadixTree examples (OFF)*
+
+The performance of the Radix Tree library depends heavily on compiler optimizations. If
+you wish to build/run the unit tests it is a good idea to use a release build confiugration,
+otherwise the tests may take a long time to complete.

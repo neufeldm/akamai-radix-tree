@@ -1,0 +1,107 @@
+// Copyright (C) 2019 Akamai Technologies, Inc
+// https://www.akamai.com
+/**
+ *
+
+\mainpage Generic Radix Tree Interface
+
+\section radix_trees_general_sec Radix Tree Refresher
+If you're already familiar with radix/patricia trees then feel free to skip this section.
+A radix tree encodes a key value as part of its structure, in contrast to a
+"regular" search tree or hash map. As an example, imagine that we're building
+a simple spelling checker. A simple and direct way of doing this would be to take
+all of our valid words and put them into either a tree or hash data structure.
+We'll assume lower-case letters only and a very small dictionary to keep the example
+simple. The words in the dictionary are also contrived to highlight important differences
+between a regular tree and a radix tree.
+
+\verbatim
+cart
+cartoon
+cat
+catalog
+dog
+\endverbatim
+
+Storing these words in a regular binary tree might look like this:
+
+\verbatim
+                 cat
+       cartoon         catalog
+    cart                     dog
+\endverbatim
+
+Storing these words in a naive radix tree would use a tree of degree 26 - one child for each
+lowercase letter of the alphabet:
+
+\verbatim
+       (root)
+  c              d
+  a              o
+r   t            g
+t   a
+o   l
+o   o
+n   g
+\endverbatim
+
+Looking up a value in the radix tree requires us to branch on each letter, so a successful
+lookup will require linear time based on the length of the word. A balanced
+binary tree requires logarithmic time based on the number of entries. To be fair
+the length of the words does matter for the binary tree as well - that cost enters
+the system as comparisons between words when performing the lookup.
+Note also that we require at least one bit at each entry to tell us whether or not it is a valid
+terminating lookup point. Otherwise there'd be no way to determine in the example above that "cat"
+is a valid dictionary item whereas "cata" isn't. The requirement of marking terminating nodes
+in a radix tree highlights a capability it has that a hash doesn't: prefix matching.
+In the above example, it would be straightforward for a radix tree to present possible word
+completions while a user was typing by speculatively following the children of the tree. For
+example, once the prefix "ca" has been typed the possible completions "car", "cat", "cartoon",
+and "catalog" all follow directly on. Providing this prefix matching functionality would be
+awkward and complicated in either a regular tree or hash, and as we'll discuss later prefix
+matching is a key feature for scalably describing IPv6 space. An important implementation detail
+of radix trees is the use of "edges" to avoid requiring full nodes at non-terminal and
+non-branching points in the tree. An edge substitutes a list of the branches to be taken for actual
+nodes and child pointers. This saves a significant amount of space when trees are sparse:
+
+\verbatim
+          (root)
+     ca            do             
+   r    t            g
+ too    alo
+  n       g
+\endverbatim
+
+\section intro_sec Introduction
+The typical use case for radix trees is as a longest prefix match key/value
+store with lookup/insertion complexity on the order of key length. Routing
+tables are a common example: routes for subnets are added and removed as
+required, and when finding a next hop for an IP destination the most
+specific (longest) match is required. However, it is sometimes
+useful to treat a radix tree as if it were simply a tree.
+For example: extracting the entire contents of the key/value store. One
+very natural way to do this is to perform a preorder traversal of the
+tree, getting the key and value at each place in the preorder traversal that
+contains a value. For this particular task it isn't too awkward to simply
+require explicit knowledge of the underlying radix tree node/edge structure.
+
+This situation is analagous to representing extremely
+large but sparse matrices. The best representation of a sparse
+matrix depends greatly on the nature of the numbers stored in the
+sparse matrix. For example, a matrix with non-zero values only on the
+diagonal might be best represented as a single vector representing those
+elements. A matrix with a small number of non-zero rows might be
+best represented as a list of row values. It would be awkward if
+matrix manipulation routines were required to know exactly what
+underlying representation was in use for specific operations,
+so matrix values are accessed by row and column no matter what
+the underlying data structures may be.
+
+\section cursor_sec Cursors
+A cursor maintains the required state to track a position in a
+radix tree. The cursor concept is commonly used in databases,
+and has been proposed as a replacement for iterators. The Boost
+Graph library makes extensive use of a cursor abstraction.
+
+*
+*/

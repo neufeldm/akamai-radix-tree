@@ -1,0 +1,5 @@
+*.cmake
+*.make
+*.o
+Makefile
+CMakeFiles
