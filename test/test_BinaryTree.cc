@@ -76,7 +76,7 @@ void postOrderDelete(CursorType&& c) {
       c.goChild(i);
       postOrderDelete(std::forward<CursorType>(c));
       c.goParent();
-  	}
+    }
   }
   if (c.atNode() && (c.getPath().size() > 0)) {
     c.nodeValue().clear();
@@ -347,7 +347,7 @@ TEST(BinaryTree, RandomFill) {
   std::vector<uint32_t> inOrder(shuffled);
   std::sort(inOrder.begin(), inOrder.end(), [&vals](std::size_t a, std::size_t b) -> bool { return PathSortInOrder<BinaryTestPath32>{}(vals[a], vals[b]); });
 
-	Tree8_3 fillTree;
+  Tree8_3 fillTree;
   addToTreeMove(fillTree, vals, shuffled);
   ASSERT_TRUE(checkTreeMove(fillTree, vals, shuffled));
 
@@ -394,7 +394,7 @@ TEST(BinaryTree, sparseRandomFill) {
   std::vector<uint32_t> inOrder(copied);
   std::sort(inOrder.begin(), inOrder.end(), [&vals](std::size_t a, std::size_t b) -> bool { return PathSortInOrder<BinaryTestPath32>{}(vals[a], vals[b]); });
 
-	Tree8_3 fillTree;
+  Tree8_3 fillTree;
   addToTreeMove(fillTree, vals, copied);
 
   ASSERT_TRUE(checkTreeMove(fillTree, vals, copied));
@@ -436,7 +436,7 @@ TEST(BinaryTree, fullDelete) {
 
   cursorGotoRoot(c);
   preOrderTest(p, c, [](decltype(p)& /*pth*/, decltype(c)& cbc) {
-                      	ASSERT_TRUE(!(cbc.atValue()));
+                        ASSERT_TRUE(!(cbc.atValue()));
                         });
   cursorGotoRoot(c);
   postOrderDelete(c);
@@ -448,18 +448,18 @@ TEST(BinaryTree, fullDelete) {
  */
 TEST(BinaryTree, TestKnownProblems) { 
 
-	using PathVal = TestPathValue<BinaryTestPath16, uint32_t>; 
-	
-	Tree16<3> sparseTree;	
+  using PathVal = TestPathValue<BinaryTestPath16, uint32_t>;
 
-	auto c = sparseTree.cursor();
+  Tree16<3> sparseTree;
+
+  auto c = sparseTree.cursor();
 
   /* Test the following tree topography:
    * 
    *              (root)
    *                  \1
-   *									()
-   *                0/	\1	
+   *                  ()
+   *                0/  \1
    *               0/\1  \1
    *              0/ ()   \1
    *             0/ 0/     \1
@@ -474,66 +474,66 @@ TEST(BinaryTree, TestKnownProblems) {
    *
    */
 
-  // Generate 'BasePath' - 101 with a value at the end of the path		
-	std::mt19937 g(RandomSeeds::at(8));
+  // Generate 'BasePath' - 101 with a value at the end of the path
+  std::mt19937 g(RandomSeeds::at(8));
   int randValue = g();
-	PathVal BasePath({1,0,1}, randValue);
-	cursorGotoRoot(c);
-	BasePath.setCursor(c);
-	c.addNode();
-	ASSERT_TRUE(c.nodeValue().atNode());
-	c.nodeValue().set(BasePath.value);
-	ASSERT_EQ(*(c.nodeValue().getPtrRO()), BasePath.value);
-	cursorGotoRoot(c);
+  PathVal BasePath({1,0,1}, randValue);
+  cursorGotoRoot(c);
+  BasePath.setCursor(c);
+  c.addNode();
+  ASSERT_TRUE(c.nodeValue().atNode());
+  c.nodeValue().set(BasePath.value);
+  ASSERT_EQ(*(c.nodeValue().getPtrRO()), BasePath.value);
+  cursorGotoRoot(c);
 
   // Generate first 'MergePath' - 1111110 with end path value
-	uint32_t randValue2 = g();
-	auto c2 = sparseTree.cursor();
-	PathVal MergePath({1,1,1,1,1,1,0}, randValue2);
-	MergePath.setCursor(c2);
-	ASSERT_FALSE(c2.nodeValue().atNode());
-	c2.addNode();
-	ASSERT_TRUE(c2.nodeValue().atNode());
-	c2.nodeValue().set(MergePath.value);
-	ASSERT_EQ(*(c2.nodeValue().getPtrRO()), MergePath.value);	
-	cursorGotoRoot(c2);
+  uint32_t randValue2 = g();
+  auto c2 = sparseTree.cursor();
+  PathVal MergePath({1,1,1,1,1,1,0}, randValue2);
+  MergePath.setCursor(c2);
+  ASSERT_FALSE(c2.nodeValue().atNode());
+  c2.addNode();
+  ASSERT_TRUE(c2.nodeValue().atNode());
+  c2.nodeValue().set(MergePath.value);
+  ASSERT_EQ(*(c2.nodeValue().getPtrRO()), MergePath.value);
+  cursorGotoRoot(c2);
 
   // Go over BasePath after adding MergePath
-	auto c3 = sparseTree.cursor();
-	cursorGotoRoot(c3);
-	ASSERT_TRUE(c3.nodeValue().atNode());
-	BasePath.moveCursor(c3);
-	ASSERT_TRUE(c3.atNode());
-	ASSERT_EQ(*(c3.nodeValue().getPtrRO()), randValue);
-	cursorGotoRoot(c3);
+  auto c3 = sparseTree.cursor();
+  cursorGotoRoot(c3);
+  ASSERT_TRUE(c3.nodeValue().atNode());
+  BasePath.moveCursor(c3);
+  ASSERT_TRUE(c3.atNode());
+  ASSERT_EQ(*(c3.nodeValue().getPtrRO()), randValue);
+  cursorGotoRoot(c3);
 
-	// Generate 2nd MergePath - 10101 with end path value
-	uint32_t M2_value = g();
-	PathVal MergePath2({1,0,1,0,1}, M2_value);
-	auto c4 = sparseTree.cursor();
-	MergePath2.setCursor(c4);
-	c4.addNode();
-	c4.nodeValue().set(MergePath2.value);
-	ASSERT_TRUE(c4.atNode());
-	
-	// Go down to BasePath node, then back up, and then down again to 
+  // Generate 2nd MergePath - 10101 with end path value
+  uint32_t M2_value = g();
+  PathVal MergePath2({1,0,1,0,1}, M2_value);
+  auto c4 = sparseTree.cursor();
+  MergePath2.setCursor(c4);
+  c4.addNode();
+  c4.nodeValue().set(MergePath2.value);
+  ASSERT_TRUE(c4.atNode());
+
+  // Go down to BasePath node, then back up, and then down again to
   // MergePath2 node 
-	BasePath.setCursor(c4);
-	ASSERT_EQ(*(c4.nodeValue().getPtrRO()), randValue) ;
-	MergePath2.setCursor(c4);
-	ASSERT_TRUE(c4.atNode());
-	ASSERT_EQ(*(c4.nodeValue().getPtrRO()), M2_value);	
-	MergePath.moveCursorFrom(c4, MergePath2);	
+  BasePath.setCursor(c4);
+  ASSERT_EQ(*(c4.nodeValue().getPtrRO()), randValue) ;
+  MergePath2.setCursor(c4);
+  ASSERT_TRUE(c4.atNode());
+  ASSERT_EQ(*(c4.nodeValue().getPtrRO()), M2_value);
+  MergePath.moveCursorFrom(c4, MergePath2);
 
   // Generate 3rd MergePath - 1000011 with end path value
-	uint32_t M3_value = g();
-	PathVal MergePath3({1,0,0,0,0,1,1}, M3_value);
-	MergePath3.setCursor(c4);
-	c4.addNode();
-	c4.nodeValue().set(MergePath3.value);
-	ASSERT_EQ(*(c4.nodeValue().getPtrRO()), M3_value);	
+  uint32_t M3_value = g();
+  PathVal MergePath3({1,0,0,0,0,1,1}, M3_value);
+  MergePath3.setCursor(c4);
+  c4.addNode();
+  c4.nodeValue().set(MergePath3.value);
+  ASSERT_EQ(*(c4.nodeValue().getPtrRO()), M3_value);
 
-	/* Test the following tree topology:
+  /* Test the following tree topology:
    *  
    *              (root)
    *             0/
@@ -549,23 +549,23 @@ TEST(BinaryTree, TestKnownProblems) {
    * that are built on one another.
    */
 
-	Tree16<3> seq_Tree;
+  Tree16<3> seq_Tree;
 
-	auto seqC = seq_Tree.cursor();
+  auto seqC = seq_Tree.cursor();
 
-	PathVal seqPath1({0}, g());
+  PathVal seqPath1({0}, g());
 
   // Create first path 
-	seqPath1.setCursor(seqC);
-	seqC.addNode();
-	seqC.nodeValue().set(seqPath1.value);
-	ASSERT_TRUE(seqC.nodeValue().atNode());
-	ASSERT_EQ(*(seqC.nodeValue().getPtrRO()), seqPath1.value);	
-	cursorGotoRoot(seqC);
+  seqPath1.setCursor(seqC);
+  seqC.addNode();
+  seqC.nodeValue().set(seqPath1.value);
+  ASSERT_TRUE(seqC.nodeValue().atNode());
+  ASSERT_EQ(*(seqC.nodeValue().getPtrRO()), seqPath1.value);
+  cursorGotoRoot(seqC);
 
-	PathVal seqPath2({0,0}, g());
-	PathVal seqPath3({0,0,0}, g());
-	PathVal seqPath4({0,0,0,0}, g());
+  PathVal seqPath2({0,0}, g());
+  PathVal seqPath3({0,0,0}, g());
+  PathVal seqPath4({0,0,0,0}, g());
   PathVal seqPath5({0,0,0,0,0}, g());
   PathVal seqPath6({0,0,0,0,0,0}, g());
   PathVal seqPath7({0,0,0,0,0,0,0}, g());
@@ -577,19 +577,19 @@ TEST(BinaryTree, TestKnownProblems) {
   PathVal seqArray[] = {seqPath1, seqPath2, seqPath3, seqPath4, seqPath5, seqPath6,
   seqPath7, seqPath8, seqPath9, seqPath10, seqPath11, seqPath12};
 
-	// Set nodes and values between each edge
+  // Set nodes and values between each edge
   for (int i = 0; i < 11; i++) {
     seqArray[i].setCursor(seqC);
     seqC.addNode();
-		seqC.nodeValue().set(seqArray[i].value);	
-	}
+    seqC.nodeValue().set(seqArray[i].value);
+  }
 
-	seqArray[11].setCursor(seqC);
+  seqArray[11].setCursor(seqC);
   
   // Traverse upward from bottom node, jumping along previous paths
-	for (int i = 11; i > 0; i--){
-		seqArray[i-1].moveCursorFrom(seqC, seqArray[i]); 
-		ASSERT_TRUE(seqC.atNode());
+  for (int i = 11; i > 0; i--){
+    seqArray[i-1].moveCursorFrom(seqC, seqArray[i]);
+    ASSERT_TRUE(seqC.atNode());
     ASSERT_EQ(*(seqC.nodeValue().getPtrRO()), seqArray[i-1].value);
   }
 
@@ -611,16 +611,16 @@ TEST(BinaryTree, TestKnownProblems) {
    * nodes at junctions of paths, rather than first returning to the
    * root and then moving to end of target path
    */
-	Tree16<3> hookedTree;
-	
-	auto hookedC = hookedTree.cursor();
+  Tree16<3> hookedTree;
+
+  auto hookedC = hookedTree.cursor();
 
   PathVal backbone({0,0,0,0,0,0,0,0,0,0}, g());
-	backbone.setCursor(hookedC);
-	
-	PathVal finger1({0,1}, g());
-	PathVal finger2({0,0,1}, g());
-	PathVal finger3({0,0,0,1}, g());
+  backbone.setCursor(hookedC);
+
+  PathVal finger1({0,1}, g());
+  PathVal finger2({0,0,1}, g());
+  PathVal finger3({0,0,0,1}, g());
   PathVal finger4({0,0,0,0,1}, g());
   PathVal finger5({0,0,0,0,0,1}, g());
   PathVal finger6({0,0,0,0,0,0,1}, g());
@@ -629,22 +629,22 @@ TEST(BinaryTree, TestKnownProblems) {
   PathVal finger9({0,0,0,0,0,0,0,0,0,1}, g());
   PathVal finger10({0,0,0,0,0,0,0,0,0,0,1}, g());
 
-	
-	PathVal fingers[] = {finger1, finger2, finger3, finger4, finger5, finger6,
+
+  PathVal fingers[] = {finger1, finger2, finger3, finger4, finger5, finger6,
   finger7, finger8, finger9, finger10};
 
   // Initialize nodes with values at end of each "finger"
-	for (int i = 0; i < 9; i++) {
+  for (int i = 0; i < 9; i++) {
     fingers[i].setCursor(hookedC);
     hookedC.addNode();
     hookedC.nodeValue().set(fingers[i].value);
   }
 
   // Move to very bottom of path "backbone"
-	backbone.setCursor(hookedC);
-	finger10.moveCursorFrom(hookedC, backbone);
+  backbone.setCursor(hookedC);
+  finger10.moveCursorFrom(hookedC, backbone);
 
-	// Starting at bottom finger, hook around to the next finger, 
+  // Starting at bottom finger, hook around to the next finger,
   // moving toward the root
   for (int i = 9; i > 0; i--) {
     fingers[i-1].moveCursorFrom(hookedC, fingers[i]);

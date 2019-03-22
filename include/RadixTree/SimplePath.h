@@ -98,7 +98,7 @@ public:
    * \brief Expand the capacity of the path.
    * \param newsize the new capacity for the path
    */
-	void resize(std::size_t newsize) { path_.resize(newsize); }
+  void resize(std::size_t newsize) { path_.resize(newsize); }
 
   /** 
    * \brief Return the difference between maximum depth and the current size of the path.

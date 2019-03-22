@@ -214,12 +214,12 @@ TEST(BinaryPath, TrimFront) {
 
   std::string binaryStr("1111010111101010");
 
-   /* Test for case when size of the path is == to desired trim amount;
-   * BinaryPath should have length 0 
-   */	
-	BinaryPath<16> p1;
- 	p1.fromBinaryString(binaryStr);
- 	p1.trim_front(16);
+  /* Test for case when size of the path is == to desired trim amount;
+   * BinaryPath should have length 0
+   */
+  BinaryPath<16> p1;
+   p1.fromBinaryString(binaryStr);
+   p1.trim_front(16);
   ASSERT_EQ(p1.size(), 0);
 
   /* Test for case when desired trimmed size is 1 bit smaller than a multiple
@@ -248,10 +248,10 @@ TEST(BinaryPath, TrimFront) {
   ASSERT_EQ(p4.size(), 4);
 
 
- 	/* Test that continual calls to trim_back for the length of original 
-	 * binary path will yield empty path
-   */
- 	BinaryPath<16> p5;
+   /* Test that continual calls to trim_back for the length of original
+    * binary path will yield empty path
+    */
+   BinaryPath<16> p5;
   p5.fromBinaryString(binaryStr);
   int init_size = p5.size();
   for (int i = 0; i < init_size; i++){
@@ -263,11 +263,11 @@ TEST(BinaryPath, TrimFront) {
 TEST(BinaryPath, TrimBack) {
 
   std::string binaryStr("1001110011111111"); /* init binary string 
-							with length 16 */
+              with length 16 */
 
   /* Test for case when size of the path is == to desired trim amount;
    * BinaryPath should have length 0 
-   */	
+   */
   BinaryPath<16> p1;
   p1.fromBinaryString(binaryStr);
   p1.trim_back(16);
@@ -299,9 +299,9 @@ TEST(BinaryPath, TrimBack) {
   ASSERT_EQ(p4.size(), 4);
 
   /* Test that continual calls to trim_back for the length of original 
-	 * binary path will yield empty path
+   * binary path will yield empty path
    */
- 	BinaryPath<16> p5;
+   BinaryPath<16> p5;
   p5.fromBinaryString(binaryStr);
   int init_size = p5.size();
   for (int i = 0; i < init_size; i++){

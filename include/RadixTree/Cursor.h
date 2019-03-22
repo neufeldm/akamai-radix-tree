@@ -66,8 +66,8 @@ public:
 
   // Interface methods start here
   
-	/** \brief Return current Path on which the cursor is located */
-	PathType getPath() const { return curPath_; }
+  /** \brief Return current Path on which the cursor is located */
+  PathType getPath() const { return curPath_; }
   
   /**
    * \brief Check to see if the cursor is currently at a node in the tree.

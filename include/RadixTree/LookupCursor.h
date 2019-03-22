@@ -71,7 +71,7 @@ public:
 
   // Interface methods start here
   
-	PathType getPath() const { return curPath_; }
+  PathType getPath() const { return curPath_; }
   
   bool atNode() const { return (depthBelow_ == 0); }
 
@@ -165,7 +165,7 @@ public:
 
   // Interface methods start here
   
-	PathType getPath() const { return curPath_; }
+  PathType getPath() const { return curPath_; }
   
   bool atNode() const { return (depthBelow_ == 0); }
 

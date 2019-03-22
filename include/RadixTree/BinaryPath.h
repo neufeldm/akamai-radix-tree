@@ -221,7 +221,7 @@ std::size_t BinaryPath<MaxDepth>::matching(const BinaryPath<MaxDepth>& other) co
 template <std::size_t MaxDepth>
 void BinaryPath<MaxDepth>::trim_back(std::size_t n) {
   if (n == 0) { return; }
-	if (length_ < n) {
+  if (length_ < n) {
     throw std::length_error("PathBinary::trim_back: attempt to trim more bits than available");
   }
   if (length_ == n) { return clear(); }
@@ -249,7 +249,7 @@ void BinaryPath<MaxDepth>::trim_front(std::size_t n)
   }
 
   shiftLeftBits(bits_,n);
-	if (length_ == n) { return clear(); }
+  if (length_ == n) { return clear(); }
   trim_back(n);
 }
 
@@ -297,7 +297,7 @@ void BinaryPath<MaxDepth>::shiftLeftBits(BitsType&& bits,std::size_t bitCount) {
   std::size_t bitsToShift = (bitCount % 8);
   if (bitsToShift > 0) {
     for (std::size_t i=0; i<bits.size(); ++i) {
-			bits[i] = (bits[i] << bitsToShift);
+      bits[i] = (bits[i] << bitsToShift);
       if (i < (bits.size() - 1)) {
         bits[i] |= (bits[i+1] >> (8 - bitsToShift));
       }
