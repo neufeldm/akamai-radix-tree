@@ -77,13 +77,8 @@ public:
   inline bool goChild(std::size_t child);
   bool canGoChild(std::size_t /*child*/) const { return (curPath_.suffixLength() > 0); }
   inline bool canGoChildNode(std::size_t child) const;
-  bool hasChildNode(std::size_t child) const { return canGoChildNode(child); }
-  inline PathType goChildNode(std::size_t child);
-  inline PathType childNodePath(std::size_t child) const;
   inline bool goParent();
   bool canGoParent() const { return (curPath_.size() > 0); }
-  inline std::size_t parentNodeDistance() const;
-  inline std::size_t goParentNode();
   NodeValue coveringNodeValueRO() const { return NodeValue{coveringValueNode()}; }
   NodeValue nodeValue() const { return (atNode() ? NodeValue{backNode()} : NodeValue{}); }
   NodeValue nodeValueRO() const { return nodeValue(); }
@@ -166,24 +161,6 @@ bool WalkCursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goParent() {
 }
 
 template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
-std::size_t
-WalkCursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::parentNodeDistance() const {
-  return nodeStack_.back().depthBelow;
-}
-
-template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
-std::size_t
-WalkCursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goParentNode() {
-  if (!canGoParent()) return 0;
-  std::size_t depthBelow = nodeStack_.back().depthBelow;
-  while (nodeStack_.back().depthBelow > 0) {
-    nodeStack_.pop_back();
-    curPath_.pop_back();
-  }
-  return depthBelow;
-}
-
-template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
 bool WalkCursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::canGoChildNode(std::size_t child) const {
   if (!canGoChild(child)) { return false; }
   std::size_t depthBelow = nodeStack_.back().depthBelow;
@@ -192,55 +169,6 @@ bool WalkCursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::canGoChildNode(std::
   NodeImplRef nodeRefBelow = nodeStack_.back().nodeRefBelow;
   if (nodeRefBelow == Allocator::nullRef) { return false; }
   return (nodeStack_.back().edgeToBelow.at(0) == child);
-}
-
-template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
-PathT WalkCursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goChildNode(std::size_t child) {
-  if (!canGoChildNode(child)) { return PathType{}; }
-  PathType childPath{};
-  const NodePos& np = nodeStack_.back();
-  Node coveringNode{alloc_,np.nodeRefAtAbove};
-  NodeImplRef childNodeRef{(np.depthBelow == 0) ? coveringNode.getChild(child) : np.nodeRefBelow};
-  std::size_t depthBelow = np.depthBelow;
-  Node childNode{alloc_,childNodeRef};
-  if (depthBelow == 0) {
-    NodePos newNodePos = nodeStack_.back();
-    newNodePos.nodeRefBelow = childNodeRef;
-    newNodePos.depthBelow++;
-    newNodePos.edgeToBelow = childNode.edge();
-    nodeStack_.push_back(std::move(newNodePos));
-    curPath_.push_back(child);
-    childPath.push_back(child);
-    ++depthBelow;
-  }
-  while (!nodeStack_.back().edgeToBelow.empty()) {
-    NodePos newNodePos = nodeStack_.back();
-    newNodePos.depthBelow++;
-    nodeStack_.push_back(std::move(newNodePos));
-    std::size_t nextStep = newNodePos.edgeToBelow.at(0);
-    curPath_.push_back(nextStep);
-    childPath.push_back(nextStep);
-    newNodePos.edgeToBelow.trim_front(1);
-  }
-  NodePos& finalNodePos(nodeStack_.back());
-  finalNodePos.depthBelow = 0;
-  finalNodePos.nodeRefAtAbove = finalNodePos.nodeRefBelow;
-  finalNodePos.nodeRefBelow = Allocator::nullRef;
-
-  return childPath;
-}
-
-template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
-PathT
-WalkCursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::childNodePath(std::size_t child) const {
-  PathType childPath{};
-  if (!canGoChildNode(child)) { return childPath; }
-  const NodePos& np(nodeStack_.back());
-  if (np.depthBelow == 0) { childPath.push_back(child); }
-  for (std::size_t i = 0; i < np.edgeToBelow.size(); ++i) {
-    childPath.push_back(np.edgeToBelow.at(i));
-  }
-  return childPath;
 }
 
 } //  namespace RadixTree

@@ -126,22 +126,7 @@ public:
    * \param[in] child child number (0..(R-1)) to check
    */
   bool canGoChildNode(std::size_t child) const { return (getChildNode(child).exists()); }
-  bool hasChildNode(std::size_t child) const { return canGoChildNode(child); }
- 
-  /**
-   * \brief Go directly to child node, passing over any edge, if possible.
-   *
-   * \return path object for the full path traversed down to the child (empty if no traversal possible)
-   * \param[in] child child number to start at
-   */
-  inline PathType goChildNode(std::size_t child);
-  /**
-   * \brief Return the path that would be traversed by goChildNode(child) if it were called.
-   *
-   * \return path object for the full path that would be traversed down to the child (empty if no traversal possible)
-   * \param[in] child child number to start at
-   */
-  inline PathType childNodePath(std::size_t child) const;
+
   /**
    * \brief Go to the parent of the current node if not at root.
    *
@@ -155,24 +140,6 @@ public:
    * \return whether or not the cursor was able to move to the parent
    */
   bool canGoParent() const { return (curPath_.size() > 0); }
-  /**
-   * \brief Return distance (in path branches) to parent node above the current.
-   *
-   * Returns the number of branches that would be traversed by goParentNode().
-   * When at the root this value is 0, i.e. no motion to parent is possible so none would occur. 
-   *
-   * \return number of branches required to get from a node above down to the current position
-   */
-  inline std::size_t parentNodeDistance() const;
-  /**
-   * \brief Go to the parent node above the current position.
-   *
-   * When at root of tree no cursor motion occurs, 0 is returned.
-   *
-   * \return number of branches traversed to get to parent node
-   */
-  inline std::size_t goParentNode();
-
 
   /**
    * \brief Return read-only node value of covering node at current position in the path.
@@ -390,87 +357,6 @@ bool CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goParent() {
 
   return true;
 }
-
-template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
-std::size_t
-CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::parentNodeDistance() const {
-  if (!canGoParent()) { return 0; }
-  const NodePos& pos(nodeStack_.back());
-  std::size_t depthBelow = (curPath_.size() - pos.depth);
-  if (depthBelow == 0) {
-    // At a node so have to jump back up one position in the stack.
-    const NodePos& prevPos(nodeStack_.at(nodeStack_.size() - 2));
-    depthBelow = (curPath_.size() - prevPos.depth);
-  }
-  return depthBelow;
-}
-
-template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
-std::size_t
-CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goParentNode() {
-  if (!canGoParent()) return 0;
-  const NodePos& pos(nodeStack_.back());
-  std::size_t depthBelow = (curPath_.size() - pos.depth);
-  if (depthBelow == 0) {
-    nodeStack_.pop_back();
-    const NodePos& newPos(nodeStack_.back());
-    depthBelow = (curPath_.size() - newPos.depth);
-  }
-  for (std::size_t i = 0;i < depthBelow;++i) { curPath_.pop_back(); }
-  curPathNodeChild_ = std::numeric_limits<std::size_t>::max();
-  curPathNodeEdge_.clear();
-
-  return depthBelow;
-}
-
-template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
-PathT CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goChildNode(std::size_t child) {
-  Node childNode{getChildNode(child)};
-  if (!childNode.exists()) { return PathType{}; }
-
-  const NodeEdge& ext(childNode.edge());
-  const NodePos& pos(nodeStack_.back());
-  std::size_t depthBelow = (curPath_.size() - pos.depth);
-
-  // Setup our new node stack position
-  NodePos newPos{childNode.nodeImplRef(),pos.depth + ext.size() + 1};
-  nodeStack_.push_back(newPos);
-  curPathNodeEdge_.clear();
-  curPathNodeChild_ = std::numeric_limits<std::size_t>::max();
-  PathType childPath{};
-  // If we're at a node then first go to the passed in child
-  // to get us to the first child in the edge.
-  if (depthBelow == 0) {
-    curPath_.push_back(child);
-    childPath.push_back(child);
-  }
-  // Walk as much of the edge as we need.
-  for (std::size_t i=0;i<ext.size();++i) {
-    curPath_.push_back(ext[i]);
-    childPath.push_back(ext[i]);
-  }
-  return childPath;
-}
-
-template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
-PathT
-CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::childNodePath(std::size_t child) const {
-  Node childNode{getChildNode(child)};
-  if (!childNode.exists()) { return PathType{}; }
-
-  const NodePos& pos(nodeStack_.back());
-  std::size_t depthBelow = (curPath_.size() - pos.depth);
-  const NodeEdge& ext(childNode.edge());
-  PathType childPath{};
-  // We have to go to the child first before we hit the edge
-  // if we're already at a node.
-  if (depthBelow == 0) { childPath.pushBack(child); }
-  // Go down the remainder of the edge.
-  std::size_t extStart = ((depthBelow == 0) ? 0 : (depthBelow - 1));
-  for (std::size_t i = extStart; i < ext.size(); ++i) { childPath.pushBack(ext[i]); }
-  return childPath;
-}
-
 
 template <std::size_t R,std::size_t MaxDepth,typename Alloc,typename NodeT,typename PathT,template<typename,std::size_t> class NodeStackT>
 typename CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::Node

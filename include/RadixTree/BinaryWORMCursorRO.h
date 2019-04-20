@@ -56,14 +56,10 @@ public:
   inline bool goChild(std::size_t child);
   bool canGoChild(std::size_t /* child */) const { return (curPath_.size() != MaxDepth); }
   inline bool canGoChildNode(std::size_t child) const;
-  inline bool hasChildNode(std::size_t child) const;
-  inline PathType goChildNode(std::size_t child);
-  inline PathType childNodePath(std::size_t child) const;
  
   inline bool goParent();
   bool canGoParent() const { return (curPath_.size() > 0); }
-  inline std::size_t parentNodeDistance() const;
-  inline std::size_t goParentNode();
+
   //NodeValue coveringNodeValueRO() const { return NodeValue{coveringValueNode()}; }
   NodeValueRO nodeValueRO() const {
     if (atValue()) {
@@ -145,15 +141,9 @@ public:
   }
   bool hasChildNode(std::size_t child) const { return canGoChildNode(child); }
  
-  PathType goChildNode(std::size_t /* child */) { throw std::runtime_error("BinaryWORMLookupCursorRO: goChildNode unimplemented"); return PathType{}; }
-  PathType childNodePath(std::size_t /* child */) const { throw std::runtime_error("BinaryWORMLookupCursorRO: childNodePath unimplemented"); return PathType{}; }
- 
   bool goParent() { throw std::runtime_error("BinaryWORMLookupCursorRO: can't return"); return false; }
   bool canGoParent() const { return false; }
 
-  std::size_t parentNodeDistance() const { throw std::runtime_error("BinaryWORMLookupCursorRO: parentNodeDistance unimplemented"); return 0; }
- 
-  std::size_t goParentNode() { throw std::runtime_error("BinaryWORMLookupCursorRO: can't return to parent node"); }
   inline NodeValue coveringNodeValueRO() const;
   inline NodeValue nodeValue() const;
   NodeValue nodeValueRO() const { return nodeValue(); }
@@ -240,25 +230,6 @@ bool BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::goParent() {
 }
 
 template <typename PathT,typename BinaryWORMNodeT,template<typename,std::size_t> class NodeStackT>
-std::size_t
-BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::parentNodeDistance() const {
-  if (!canGoParent()) { return 0; }
-  return nodeStack_.back().depthBelow;
-}
-
-template <typename PathT,typename BinaryWORMNodeT,template<typename,std::size_t> class NodeStackT>
-std::size_t
-BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::goParentNode() {
-  if (!canGoParent()) return 0;
-  std::size_t depthBelow = nodeStack_.back().depthBelow;
-  while (nodeStack_.back().depthBelow > 0) {
-    nodeStack_.pop_back();
-    curPath_.pop_back();
-  }
-  return depthBelow;
-}
-
-template <typename PathT,typename BinaryWORMNodeT,template<typename,std::size_t> class NodeStackT>
 bool
 BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::canGoChildNode(std::size_t child) const {
   if (!canGoChild(child)) { return false; }
@@ -268,59 +239,6 @@ BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::canGoChildNode(std::size_t
   const uint8_t* nodeBelow = nodeStack_.back().nodeBelow;
   if (nodeBelow == nullptr) { return false; }
   return (nodeStack_.back().firstEdgeStep() == child);
-}
-
-template <typename PathT,typename BinaryWORMNodeT,template<typename,std::size_t> class NodeStackT>
-PathT
-BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::goChildNode(std::size_t child) {
-  if (!canGoChildNode(child)) { return PathType{}; }
-  PathType childPath{};
-  const NodePos& np = nodeStack_.back();
-  Node coveringNode{np.nodeAtAbove};
-  const uint8_t* childNodePtr{(np.depthBelow == 0) ? coveringNode.getChild(child) : np.nodeBelow};
-  std::size_t depthBelow = np.depthBelow;
-  Node childNode{childNodePtr};
-  if (depthBelow == 0) {
-    NodePos newNodePos = nodeStack_.back();
-    newNodePos.nodeBelow = childNodePtr;
-    newNodePos.depthBelow++;
-    newNodePos.edgeToBelow = childNode.edgeBitsAsWord();
-    newNodePos.edgeStepsRemaining = childNode.edgeStepCount();
-    nodeStack_.push_back(std::move(newNodePos));
-    curPath_.push_back(child);
-    childPath.push_back(child);
-    ++depthBelow;
-  }
-  while (nodeStack_.back().edgeStepsRemaining > 0) {
-    NodePos newNodePos = nodeStack_.back();
-    newNodePos.depthBelow++;
-    nodeStack_.push_back(std::move(newNodePos));
-    std::size_t nextStep = newNodePos.firstEdgeStep();
-    curPath_.push_back(nextStep);
-    childPath.push_back(nextStep);
-    newNodePos.trimFirstEdgeStep();
-  }
-  NodePos& finalNodePos(nodeStack_.back());
-  finalNodePos.depthBelow = 0;
-  finalNodePos.nodeAtAbove = finalNodePos.nodeBelow;
-  finalNodePos.nodeBelow = nullptr;
-
-  return childPath;
-}
-
-template <typename PathT,typename BinaryWORMNodeT,template<typename,std::size_t> class NodeStackT>
-PathT
-BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::childNodePath(std::size_t child) const {
-  PathType childPath{};
-  if (!canGoChildNode(child)) { return childPath; }
-  const NodePos& np(nodeStack_.back());
-  if (np.depthBelow == 0) { childPath.push_back(child); }
-  std::size_t edgeToBelow = np.edgeToBelow;
-  for (std::size_t i = 0; i < np.edgeStepsRemaining; ++i) {
-    childPath.push_back(np.firstEdgeStep(edgeToBelow));
-    edgeToBelow = (edgeToBelow << 1);
-  }
-  return childPath;
 }
 
 ////////////////////////////////////////////////

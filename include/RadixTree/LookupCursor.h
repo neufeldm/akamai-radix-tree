@@ -86,17 +86,10 @@ public:
     if (nodeRefBelow_ == Allocator::nullRef) { return false; }
     return (edgeToBelow_.at(0) == child);
   }
-  bool hasChildNode(std::size_t child) const { return canGoChildNode(child); }
- 
-  PathType goChildNode(std::size_t) { throw std::runtime_error("LookupCursorRO: goChildNode unimplemented"); return PathType{}; }
-  PathType childNodePath(std::size_t) const { throw std::runtime_error("LookupCursorRO: childNodePath unimplemented"); return PathType{}; }
  
   bool goParent() { throw std::runtime_error("LookupCursorRO: can't return"); return false; }
   bool canGoParent() const { return false; }
 
-  std::size_t parentNodeDistance() const { throw std::runtime_error("LookupCursorRO: parentNodeDistance unimplemented"); return 0; }
- 
-  std::size_t goParentNode() { throw std::runtime_error("LookupCursorRO: can't return to parent node"); }
   NodeValue coveringValueRO() const { return coveringValue_; }
   NodeValue nodeValue() const { return (atNode() ? NodeValue{coveringNode()} : NodeValue{}); }
   NodeValue nodeValueRO() const { return nodeValue(); }
@@ -180,17 +173,10 @@ public:
     if (nodeRefBelow_ == Allocator::nullRef) { return false; }
     return (edgeToBelow_.at(0) == child);
   }
-  bool hasChildNode(std::size_t child) const { return canGoChildNode(child); }
- 
-  PathType goChildNode(std::size_t) { throw std::runtime_error("LookupCursorWO: goChildNode unimplemented"); return PathType{}; }
-  PathType childNodePath(std::size_t) const { throw std::runtime_error("LookupCursorWO: childNodePath unimplemented"); return PathType{}; }
  
   bool goParent() { throw std::runtime_error("LookupCursorWO: can't return"); return false; }
   bool canGoParent() const { return false; }
 
-  std::size_t parentNodeDistance() const { throw std::runtime_error("LookupCursorWO: parentNodeDistance unimplemented"); return 0; }
- 
-  std::size_t goParentNode() { throw std::runtime_error("LookupCursorWO: can't return to parent node"); }
   NodeValue nodeValue() { return (atNode() ? NodeValue{coveringNode()} : NodeValue{}); }
   NodeValue nodeValueRO() const { return (atNode() ? NodeValueRO{coveringNode()} : NodeValueRO{}); }
 

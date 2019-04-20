@@ -85,7 +85,6 @@ public:
   }
   bool canGoChild(std::size_t child) const { return callOnAllTuple(CheckIfAll<CursorCanGoChild>{},allCursors_,CursorCanGoChild{child}); }
   bool canGoChildNode(std::size_t child) const { return callOnAllTuple(CheckIfAny<CursorCanGoChildNode>{},allCursors_,CursorCanGoChildNode{child}); }
-  bool hasChildNode(std::size_t child) const { return canGoChildNode(child); }
   bool goParent() {
     if (!canGoParent()) { return false; }
     callOnEachTuple(CursorGoParent{},allCursors_);
