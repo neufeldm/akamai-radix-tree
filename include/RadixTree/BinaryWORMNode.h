@@ -26,6 +26,7 @@ SOFTWARE.
 #include <stdint.h>
 #include <stdexcept>
 #include <type_traits>
+#include <cstring>
 
 #include "BinaryWORMNodeHeaderBytes.h"
 #include "BinaryWORMNodeHeader.h"
