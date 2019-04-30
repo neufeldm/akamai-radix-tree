@@ -166,32 +166,38 @@ public:
   BinaryWORMNodeWO() = default;
   BinaryWORMNodeWO(const WriteValueType& wv) : writeValue_(wv) {}
 
-  void setValue(const ValueType* v) { valuePtr_ = v; }
-  void clearValue() { setValue(nullptr); this->setHasValue(false); }
+  void setValue(const ValueType* v) {
+    if (v == nullptr) { clearValue(); return; }
+    valueBytes_.resize(writeValue_.writeSize(v));
+    writeValue_.write(v,valueBytes_.data());
+  }
+  void clearValue() { valueBytes_.clear(); this->setHasValue(false); }
 
   std::size_t size() const { return (this->headerSize() + valueSize()); }
   std::size_t valueSize() const {
     if (VoidValue || !this->hasValue()) { return 0; }
-    if (valuePtr_ == nullptr) {
-      throw std::runtime_error("BinaryWORMNodeWO: attempt to get size of non-void nullptr value");
+    if (valueBytes_.empty()) {
+      throw std::runtime_error("BinaryWORMNodeWO: attempt to get size of non-void empty value");
     }
-    return writeValue_.writeSize(valuePtr_);
+    return valueBytes_.size();
   }
 
   std::size_t write(uint8_t* ptr) const {
     std::size_t bytesWritten = this->writeHeader(ptr);
     if (VoidValue || !this->hasValue()) { return bytesWritten; }
-    if (valuePtr_ == nullptr) {
-      throw std::runtime_error("BinaryWORMNodeWO: attempt to write non-void nullptr value");
+    if (valueBytes_.empty()) {
+      throw std::runtime_error("BinaryWORMNodeWO: attempt to write non-void empty value");
     }
-    bytesWritten += writeValue_.write(valuePtr_,ptr + bytesWritten);
+    std::memcpy(ptr + bytesWritten,valueBytes_.data(),valueBytes_.size());
+    bytesWritten += valueBytes_.size();
     return bytesWritten;
   }
 
 private:
   WriteValueType writeValue_{};
-  const ValueType* valuePtr_{};
+  std::vector<uint8_t> valueBytes_{};
 };
+
 
 template <std::size_t UINTBYTECOUNT,bool LITTLEENDIAN>
 struct BinaryWORMReadWriteUInt {
