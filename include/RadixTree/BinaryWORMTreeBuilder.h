@@ -222,12 +222,13 @@ public:
    * be sufficient, but if you need to override it with a specific writer that
    * maintains some extra state then you can use this constructor.
    */
-  BinaryWORMTreeBuilder(const WriteValueType& wv) : writeValue_(wv) {}
+  BinaryWORMTreeBuilder(const WriteValueType& wv,bool rejectEmptyLeaf = false)
+    : rejectEmptyLeaf_(rejectEmptyLeaf), writeValue_(wv) {}
   /**
    * \brief Provide a buffer manager as well as an optional value writer.
    */
-  BinaryWORMTreeBuilder(Buffer&& mb,const WriteValueType& wv = WriteValueType{})
-    : buffer_(std::move<Buffer>(mb)), writeValue_(wv) {}
+  BinaryWORMTreeBuilder(Buffer&& mb,bool rejectEmptyLeaf = false,const WriteValueType& wv = WriteValueType{})
+    : rejectEmptyLeaf_(rejectEmptyLeaf), buffer_(std::move<Buffer>(mb)), writeValue_(wv) {}
 
   virtual ~BinaryWORMTreeBuilder() = default;
   
@@ -283,6 +284,15 @@ private:
   bool started_{false};
   bool finished_{false};
   bool statsOnly_{false};
+  /**
+   * \brief If true then throw exception if empty leaf node is added to tree.
+   *
+   * An empty leaf node means that we've got at least one branch of the tree
+   * that contributes no value whatsoever to tree lookups, just adds overhead.
+   * During building we can't silently ignore them without rewinding the write
+   * process, which is more complexity than seems worth it.
+   */
+  bool rejectEmptyLeaf_{false};
   std::size_t curSize_{0};
   Buffer buffer_{};
   WriteValueType writeValue_{};
@@ -403,8 +413,8 @@ BinaryWORMTreeBuilder<BufferT,PathT,BinaryWORMNodeT>::addNode(const PathType& pa
   const HasChildren has(hasChild);
   const bool isRoot = (path.empty());
 
-  if (has.noChildren && !hasValue && !isRoot) {
-    throw std::runtime_error("BinaryWORMTreeBuilder: attempt to add terminal node without value in non-empty tree");
+  if (rejectEmptyLeaf_ && has.noChildren && !hasValue && !isRoot) {
+    throw std::runtime_error("BinaryWORMTreeBuilder: attempt to add empty leaf node to non-empty tree");
   }
 
   if (nodesWritten_.empty()) {
