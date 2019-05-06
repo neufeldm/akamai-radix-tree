@@ -412,8 +412,18 @@ void
 BinaryWORMTreeBuilder<BufferT,PathT,BinaryWORMNodeT>::addNode(const PathType& path,bool hasValue,const ValueType* v,const HasChild& hasChild) {
   const HasChildren has(hasChild);
   const bool isRoot = (path.empty());
+  // An empty leaf node has no children and no value set.
+  // This sort of node is useless, but if someone has been
+  // a bit sloppy with tree construction they might show up.
+  bool isEmptyLeaf = (has.noChildren && !hasValue);
+  // Nodes that don't have a value and don't have both children
+  // are basically "scaffolding" nodes, i.e. those that get added
+  // when the maximum edge size of a single node is too small to
+  // cover the entire desired edge. We'll add our own scaffolding
+  // nodes later on as required by the node type in use.
+  bool isScaffolding = !(hasValue || has.bothChildren);
 
-  if (rejectEmptyLeaf_ && has.noChildren && !hasValue && !isRoot) {
+  if (rejectEmptyLeaf_ && isEmptyLeaf && !isRoot) {
     throw std::runtime_error("BinaryWORMTreeBuilder: attempt to add empty leaf node to non-empty tree");
   }
 
@@ -442,12 +452,11 @@ BinaryWORMTreeBuilder<BufferT,PathT,BinaryWORMNodeT>::addNode(const PathType& pa
     if (isRoot) { return; }
   }
 
-  // Nodes that don't have a value and don't have both children
-  // are basically "scaffolding" nodes, i.e. those that get added
-  // when the maximum edge size of a single node is too small to
-  // cover the entire desired edge. We'll add our own scaffolding
-  // nodes later on as required by the node type in use.
-  if (!(hasValue || has.bothChildren)) { return; }
+  // Quietly ignore scaffolding nodes, let empty leaf nodes through
+  // if we aren't rejecting them.
+  if (isScaffolding && !(isEmptyLeaf && !rejectEmptyLeaf_)) {
+    return;
+  }
   NodeWritten& parent(nodesWritten_.back());
   PathType connectingPath = pathFromParent(parent,path);
   // Now need to walk the connecting path and string together
