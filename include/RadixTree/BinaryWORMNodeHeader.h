@@ -91,68 +91,76 @@ private:
 };
 
 /**
- * \brief Wrapper class for the read/write (mostly write) binary WORM node header.
+ * \brief Wrapper class for the read/write binary WORM node header.
+ * 
+ * Keeps writing state in an internal buffer.
  */
 template <std::size_t OFFSETSIZE,bool LITTLEENDIAN>
 class BinaryWORMNodeHeaderRW
+  : public BinaryWORMNodeHeaderRO<OFFSETSIZE,LITTLEENDIAN>
 {
 public:
   using MyType = BinaryWORMNodeHeaderRW<OFFSETSIZE,LITTLEENDIAN>;
   using HeaderRO = BinaryWORMNodeHeaderRO<OFFSETSIZE,LITTLEENDIAN>;
   using HeaderBytes = BinaryWORMNodeHeaderBytes<OFFSETSIZE,LITTLEENDIAN>;
   using OffsetType = typename HeaderBytes::OffsetType;
-  using EdgeType = SimpleEdge<2,HeaderBytes::MaxEdgeSteps>;
+  // XXX replace with wrapper for byte edge...
+  // XXX look out for copy assignment - that kind of thing
+  class EdgeType {
+  public:
+    EdgeType(uint8_t* edgeByte) : edgeByte_(edgeByte) {}
+    EdgeType& operator=(const EdgeType& o) {
+      *edgeByte_ = (*edgeByte_ & HeaderBytes::MASK_ALL_EDGE_OUT) | (*(o.edgeByte_) & HeaderBytes::MASK_ALL_EDGE_IN);
+    }
+
+    bool full() const { return HeaderBytes::edgeStepCount(edgeByte_.data()) == HeaderBytes::MaxEdgeSteps; }
+    void pushBack(std::size_t step) {
+      if (full()) {
+        // XXX throw
+      }
+      std::size_t curStepCount = HeaderBytes::edgeStepCount(edgeByte_.data());
+      HeaderBytes::setEdgeStepAt(curStepCount,step);
+      HeaderBytes::setEdgeStepCount(edgeByte_.data(),++curStepCount);
+    }
+    
+
+  private:
+    uint8_t* edgeByte_{nullptr};
+  };
   static constexpr std::size_t Radix = 2;
   static constexpr std::size_t OffsetSize = OFFSETSIZE;
 
-  BinaryWORMNodeHeaderRW() = default;
+  BinaryWORMNodeHeaderRW() : HeaderRO(headerBytes_.data()) {}
 
-  static std::string headerTypeID() { return HeaderBytes::headerTypeID(); }
-  
-  bool hasValue() const { return hasValue_; }
-  void setHasValue(bool hv) { hasValue_ = hv; }
+  void setHasValue(bool hv) { HeaderBytes::setHasValue(headerBytes_.data(),hv); }
 
-  bool hasChild(std::size_t c) const { return hasChild_.at(c); }
-  void setHasChild(std::size_t c,bool hc) { hasChild_.at(c) = hc; }
-  void setHasChild(const std::array<bool,2>& hc) { hasChild_ = hc; }
+  void setHasChild(std::size_t c,bool hc) {
+    // XXX check limits and throw
+    HeaderBytes::setHasChild(headerBytes_.data(),c,hc);
+  }
   void setRightChildOffset(OffsetType rco) {
     if (!(hasChild(0) && hasChild(1))) { throw std::runtime_error("BinaryWORMNodeHeaderRW: cannot set right child offset without right child present"); }
-    rightChildOffset_ = rco;
+    HeaderBytes::setRightChildOffset(headerBytes_.data(),rco);
   }
 
   EdgeType& edge() { return edge_; }
   const EdgeType& edge() const { return edge_; }
 
-  std::size_t headerSize() const { return HeaderBytes::headerSize(hasChild(0) && hasChild(1)); }
   std::size_t writeHeader(uint8_t* b) const {
     if (b == nullptr) { throw std::runtime_error("BinaryWORMNodeHeaderRW: attempt to write to nullptr"); }
-    HeaderBytes::clear(b);
-    HeaderBytes::setHasValue(b,hasValue());
-    HeaderBytes::setHasChild(b,0,hasChild(0));
-    HeaderBytes::setHasChild(b,1,hasChild(1));
-    std::size_t edgeStepCount = edge_.size();
-    HeaderBytes::setEdgeStepCount(b,edgeStepCount);
-    for (std::size_t s = 0; s < edgeStepCount; ++s) { HeaderBytes::setEdgeStepAt(b,s,edge_.at(s)); }
-    if (hasChild(0) && hasChild(1)) { HeaderBytes::setRightChildOffset(b,rightChildOffset_); }
+    std::memcpy(b,headerBytes_.data(),HeaderBytes::headerSize(b));
     return HeaderBytes::headerSize(b);
   }
   std::size_t readHeader(const uint8_t* b) {
+    // XXX memcpy into our own buffer
     if (b == nullptr) { throw std::runtime_error("BinaryWORMNodeHeaderRW: attempt to read from nullptr"); }
-    *this = MyType{};
-    HeaderRO h(b);
-    setHasValue(h.hasValue());
-    setHasChild(0,h.hasChild(0));
-    setHasChild(1,h.hasChild(1));
-    if (hasChild(0) && hasChild(1)) { setRightChildOffset(h.rightChildOffset()); }
-    for (std::size_t es = 0; es < h.edgeStepCount(); ++es) { edge().push_back(h.edgeStepAt(es)); }
-    return h.headerSize();
+    std::memcpy(headerBytes_.data(),b,HeaderBytes::headerSize(b));
+    return HeaderBytes::headerSize(b);
   }
 
 private:
-  bool hasValue_{false};
-  std::array<bool,2> hasChild_{{false,false}};
-  EdgeType edge_{};
-  OffsetType rightChildOffset_{0};
+  std::array<uint8_t,HeaderBytes<OFFSETSIZE,LITTLEENDIAN>::MaxHeaderSize> headerBytes_{};
+  EdgeType edge_{headerBytes_.data()};
 };
 
 /////////////////////

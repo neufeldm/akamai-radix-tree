@@ -3,3 +3,5 @@
 *.o
 Makefile
 CMakeFiles
+build-release
+.vscode
