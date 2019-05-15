@@ -4,50 +4,65 @@
 #include <stdint.h>
 #include <cstddef>
 #include <string>
+#include <array>
 
 namespace Akamai {
 namespace Mapper {
 namespace RadixTree {
 
-class BinaryWORMValue
+template <typename Buffer,typename PathType,typename ValueType>
+class GenericBinaryWORMTreeBuilder
 {
 public:
-  BinaryWORMValue() = default;
-  virtual ~BinaryWORMValue() = default;
-  virtual std::string valueTypeID() const = 0;
-  virtual std::size_t readSize(const uint8_t* valBuf) const = 0;
-};
+  using HasChild = std::array<bool,2>;
+  /**
+   * \brief Begin construction of a binary WORM tree, use buffer, optionally stats only.
+   */
+  virtual bool start(Buffer&& buffer,bool statsOnly = false) = 0;
+  /**
+   * \brief Begin construction of a binary WORM tree, optionally stats only.
+   */
+  virtual bool start(bool statsOnly = false) = 0;
+  /**
+   * \brief Has construction of a tree been started?
+   */
+  virtual bool started() const = 0;
+  /**
+   * \brief Add a node at a particular path in the tree.
+   * 
+   * Nodes must be added in pre-order. Any value pointer must be valid until
+   * the call returns. Will throw an exception if constraints are violated.
+   */
+  virtual void addNode(const PathType& path,bool hasValue,const ValueType* v,const HasChild& hasChild) = 0;
 
-template <typename T>
-class BinaryWORMValueTyped
-  : public virtual BinaryWORMValue
-{
-public:
-  using ValueType = T;
-  BinaryWORMValueTyped() = default;
-  virtual ~BinaryWORMValueTyped() = default;
-  virtual std::size_t read(const uint8_t* valBuf, ValueType* valPtr) = 0;
-  virtual std::size_t writeSize(const ValueType* valPtr) = 0;
-  virtual std::size_t write(const ValueType* valPtr, uint8_t* valPtr) = 0;
-};
-
-class BinaryWORMNodeHeader
-{
-public:
-  virtual bool hasValue() const = 0;
-  virtual bool hasChild(std::size_t c) const = 0;
-  virtual void setHasChild(std::size_t c) = 0;
-  virtual std::size_t rightChildOffset() const = 0;
-  virtual void setRightChildOffset(std::size_t o) = 0;
-  virtual const uint8_t* getChild(std::size_t c) const = 0;
-  virtual std::size_t headerSize() const = 0;
-  virtual std::size_t writeHeader(uint8_t* b) const = 0;
-  virtual std::size_t edgeStepCount() const = 0;
-  virtual const uint8_t* valuePtr() const = 0;
-
-private:
-  bool offsetLittleEndian_{false};
-  std::size_t offsetSize_{0};
+  /**
+   * \brief Indicate that the tree is complete.
+   * 
+   * The builder tracks what added nodes still require children, and if finish
+   * is called before all outstanding children have been added then finish will fail.
+   */
+  virtual bool finish() = 0;
+  /**
+   * \brief Did we start and subsequently finish a tree?
+   */
+  virtual bool finished() const = 0;
+  /**
+   * \brief Return current buffer size.
+   */
+  virtual std::size_t sizeofBuffer() const = 0;
+  /**
+   * \brief Moves the current buffer manager out, clears the internal tree state.
+   */
+  virtual Buffer extractBuffer() = 0;
+  /**
+   * \brief Const access to the current buffer manager.
+   */
+  virtual const Buffer& buffer() const = 0;
+  /**
+   * \brief Statistics for whatever tree is under construction.
+   */
+  // XXX need to define this...
+  virtual const TreeStats& treeStats() const = 0;
 };
 
 } // namespace RadixTree
