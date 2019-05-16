@@ -46,8 +46,8 @@ public:
   using CursorType = CursorT;
 
   CursorIteratorPre() = default;
-  CursorIteratorPre(const CursorT& c) : cursor_(c) { reset(); }
-  CursorIteratorPre(CursorT&& c) : cursor_(std::move(c)) { reset(); }
+  CursorIteratorPre(const CursorT& c,bool stopAtAllNodes = false) : cursor_(c), stopAtAllNodes_(stopAtAllNodes) { reset(); }
+  CursorIteratorPre(CursorT&& c, bool stopAtAllNodes = false) : cursor_(std::move(c)), stopAtAllNodes_(stopAtAllNodes) { reset(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -93,6 +93,7 @@ private:
   static std::size_t NoChild() { return std::numeric_limits<std::size_t>::max(); }
   std::vector<std::size_t> lastChildDoneStack_{};
   CursorT cursor_{};
+  bool stopAtAllNodes_{false};
 };
 
 /**
@@ -113,8 +114,8 @@ public:
   using CursorType = CursorT;
 
   CursorIteratorPost() = default;
-  CursorIteratorPost(const CursorT& c) : cursor_(c) { reset(); }
-  CursorIteratorPost(CursorT&& c) : cursor_(std::move(c)) { reset(); }
+  CursorIteratorPost(const CursorT& c,bool stopAtAllNodes = false) : cursor_(c), stopAtAllNodes_(stopAtAllNodes) { reset(); }
+  CursorIteratorPost(CursorT&& c,bool stopAtAllNodes = false) : cursor_(std::move(c)), stopAtAllNodes_(stopAtAllNodes) { reset(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -160,6 +161,7 @@ private:
   static std::size_t NoChild() { return std::numeric_limits<std::size_t>::max(); }
   std::vector<std::size_t> lastChildDoneStack_{};
   CursorT cursor_{};
+  bool stopAtAllNodes_{false};
 };
 
 /**
@@ -182,8 +184,8 @@ public:
   using CursorType = CursorT;
 
   CursorIteratorIn() = default;
-  CursorIteratorIn(const CursorT& c) : cursor_(c) { reset(); }
-  CursorIteratorIn(CursorT&& c) : cursor_(std::move(c)) { reset(); }
+  CursorIteratorIn(const CursorT& c,bool stopAtAllNodes = false) : cursor_(c), stopAtAllNodes_(stopAtAllNodes) { reset(); }
+  CursorIteratorIn(CursorT&& c,bool stopAtAllNodes = false) : cursor_(std::move(c)), stopAtAllNodes_(stopAtAllNodes) { reset(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -236,6 +238,7 @@ private:
   };
   std::vector<IterPos> iterStack_{};
   CursorT cursor_{};
+  bool stopAtAllNodes_{false};
 };
 
 /**
@@ -285,7 +288,7 @@ CursorT& CursorIteratorPre<CursorT,ReverseChildren>::next() {
       lastChildDone = c;
       cursor_.goChild(ReverseChildren ? (CursorT::Radix - c - 1) : c);
       lastChildDoneStack_.push_back(NoChild());
-      atStop = cursor_.atValue();
+      atStop = stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue();
     }
   }
   return cursor_;
@@ -324,8 +327,8 @@ CursorT& CursorIteratorPost<CursorT,ReverseChildren>::next() {
         if (cursor_.canGoChildNode(ReverseChildren ? (CursorT::Radix - c - 1) : c)) { break; }
       }
       if (c == CursorT::Radix) {
-        // We've finished all of the children - time to visit the node if there's a value.
-        atStop = cursor_.atValue();
+        // We've finished all of the children - time to visit the node/value if applicable.
+        atStop = stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue();
         lastChildDone = CursorT::Radix;
       } else {
         cursor_.goChild(ReverseChildren ? (CursorT::Radix - c - 1) : c);
@@ -380,7 +383,7 @@ CursorT& CursorIteratorIn<CursorT,ReverseChildren>::next() {
           (c >= MidPoint))
       {
         pos.finishedMidPoint = true;
-        atStop = cursor_.atValue();
+        atStop = stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue();
       } else {
         pos.lastChildDone = c;
         cursor_.goChild(ReverseChildren ? (CursorT::Radix - c - 1) : c);
