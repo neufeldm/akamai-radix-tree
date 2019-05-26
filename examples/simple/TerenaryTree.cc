@@ -25,6 +25,7 @@ SOFTWARE.
 #include <cstddef>
 #include <stdint.h>
 #include <vector>
+#include <string>
 
 #include "SimpleRadixTree.h"
 #include "RadixTree.h"

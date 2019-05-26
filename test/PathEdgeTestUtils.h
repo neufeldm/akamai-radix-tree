@@ -122,7 +122,7 @@ PathType makeRandomPath(uint64_t seed,std::size_t length) {
 template <typename PathType>
 std::string pathToString(const PathType& p) {
   std::string pstr;
-  std::size_t psize{p.size()};
+  std::size_t psize{static_cast<std::size_t>(p.size())};
   for (std::size_t i = 0; i < psize; ++i) { pstr += (std::to_string(p.at(i)) + '-'); }
   if (pstr.empty()) { pstr.push_back('-'); }
   else { pstr.pop_back(); }

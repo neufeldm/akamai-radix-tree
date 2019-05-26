@@ -23,4 +23,11 @@ if (AKAMAI_MAPPER_RADIXTREE_TEST)
   add_subdirectory(test)
 endif (AKAMAI_MAPPER_RADIXTREE_TEST)
 
+set(AKAMAI_MAPPER_CXX_WARNING_FLAGS
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILERID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
+       -Wall -Wextra -Werror
+    $<$CXX_COMPILER_ID:MSVC>:
+       /W4 /WX
+   )
+
 include(CPack)
