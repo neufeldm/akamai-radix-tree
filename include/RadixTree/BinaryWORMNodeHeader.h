@@ -79,6 +79,8 @@ public:
   const uint8_t* ptr() const { return ptr_; }
   void setPtr(const uint8_t* p) { ptr_ = p; }
 
+  bool isLeaf() const { return !(hasChild(0) || hasChild(1)); }
+
 private:
   const uint8_t* ptr_{nullptr};
   const uint8_t* checkptr() const {
@@ -144,7 +146,7 @@ public:
     if (!(this->hasChild(0) && this->hasChild(1))) { throw std::runtime_error("BinaryWORMNodeHeaderRW: cannot set right child offset without right child present"); }
     HeaderBytes::setRightChildOffset(headerBytes_.data(),rco);
   }
-
+  bool isLeaf() const { return !(hasChild(0) || hasChild(1)); }
   bool edgeFull() const { return HeaderBytes::edgeStepCount(headerBytes_.data()) == HeaderBytes::MaxEdgeSteps; }
   void edgePushBack(std::size_t step) {
     if (edgeFull()) {

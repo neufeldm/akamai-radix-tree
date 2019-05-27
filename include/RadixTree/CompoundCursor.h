@@ -75,6 +75,7 @@ public:
   // Interface methods start here
   PathType getPath() const { return callOnAllTuple(callOnEachTupleResult(CursorGetPath{}, allCursors_)); }
   bool atNode() const { return callOnAllTuple(CheckIfAny<CursorAtNode>{},allCursors_,CursorAtNode{}); }
+  bool atLeafNode() const { return allAtNode() && callOnAllTuple(CheckIfAll<CursorAtLeafNode>{},allCursors_,CursorAtLeafNode{}); }
   bool allAtNode() const { return callOnAllTuple(CheckIfAll<CursorAtNode>{},allCursors_,CursorAtNode{}); }
   bool atValue() const { return callOnAllTuple(CheckIfAny<CursorAtValue>{},allCursors_,CursorAtValue{}); }
   bool allAtValue() const { return callOnAllTuple(CheckIfAll<CursorAtValue>{},allCursors_,CursorAtValue{}); }

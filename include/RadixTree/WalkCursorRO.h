@@ -73,6 +73,7 @@ public:
 
   PathType getPath() const { return curPath_; }
   bool atNode() const { return (nodeStack_.back().depthBelow == 0); }
+  bool atLeafNode() const { return atNode() && backNode().isLeaf(); }
   bool atValue() const { return (atNode() && backNode().hasValue()); }
   inline bool goChild(std::size_t child);
   bool canGoChild(std::size_t /*child*/) const { return (curPath_.suffixLength() > 0); }

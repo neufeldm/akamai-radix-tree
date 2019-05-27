@@ -138,6 +138,10 @@ public:
     return prevChild;
   }
   bool hasChild(std::size_t c) const { return (children_.at(c) != nullRef); }
+  bool isLeaf() const {
+    for (std::size_t c=0;c<R;++c) { if (hasChild(c)) { return false; } }
+    return true; 
+  }
 
 private:
   // Children - store as simple array
@@ -197,6 +201,8 @@ public:
     if (it == children_.end()) { return false; }
     return (it->second != nullRef);
   }
+
+  bool isLeaf() const { return children_.empty(); }
 
 private:
   ChildMapT<std::size_t,NodeRef> children_{};

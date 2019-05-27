@@ -78,6 +78,11 @@ public:
   }
 
   /**
+   * \brief Return true if we're at the end of our iteration sequence.
+   */
+  bool finished() const { return lastChildDoneStack_.empty(); }
+
+  /**
    * \brief Access underlying cursor object.
    */
   CursorType* operator->() { return &cursor_; }
@@ -94,6 +99,7 @@ private:
   std::vector<std::size_t> lastChildDoneStack_{};
   CursorT cursor_{};
   bool stopAtAllNodes_{false};
+  bool atStopNode() const { return stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue(); }
 };
 
 /**
@@ -146,6 +152,11 @@ public:
   }
 
   /**
+   * \brief Return true if we're at the end of our iteration sequence.
+   */
+  bool finished() const { return lastChildDoneStack_.empty(); }
+
+  /**
    * \brief Access underlying cursor object.
    */
   CursorType* operator->() { return &cursor_; }
@@ -162,6 +173,7 @@ private:
   std::vector<std::size_t> lastChildDoneStack_{};
   CursorT cursor_{};
   bool stopAtAllNodes_{false};
+  bool atStopNode() const { return stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue(); }
 };
 
 /**
@@ -214,6 +226,10 @@ public:
     next();
     return tmp;
   }
+  /**
+   * \brief Return true if we're at the end of our iteration sequence.
+   */
+  bool finished() const { return iterStack_.empty(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -239,6 +255,7 @@ private:
   std::vector<IterPos> iterStack_{};
   CursorT cursor_{};
   bool stopAtAllNodes_{false};
+  bool atStopNode() const { return (cursor_.atValue() || (stopAtAllNodes_ && cursor_.atNode())); }
 };
 
 /**
@@ -267,7 +284,7 @@ CursorT& CursorIteratorPre<CursorT,ReverseChildren>::reset() {
   lastChildDoneStack_.push_back(NoChild());
   // Pre-order, so if we're at a value for the initial cursor
   // position then this is where we need to stay.
-  return (cursor_.atValue() ? cursor_ : next());
+  return (atStopNode() ? cursor_ : next());
 }
 
 template <typename CursorT,bool ReverseChildren>
@@ -288,7 +305,7 @@ CursorT& CursorIteratorPre<CursorT,ReverseChildren>::next() {
       lastChildDone = c;
       cursor_.goChild(ReverseChildren ? (CursorT::Radix - c - 1) : c);
       lastChildDoneStack_.push_back(NoChild());
-      atStop = stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue();
+      atStop = atStopNode();
     }
   }
   return cursor_;
@@ -328,7 +345,7 @@ CursorT& CursorIteratorPost<CursorT,ReverseChildren>::next() {
       }
       if (c == CursorT::Radix) {
         // We've finished all of the children - time to visit the node/value if applicable.
-        atStop = stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue();
+        atStop = atStopNode();
         lastChildDone = CursorT::Radix;
       } else {
         cursor_.goChild(ReverseChildren ? (CursorT::Radix - c - 1) : c);
@@ -383,7 +400,7 @@ CursorT& CursorIteratorIn<CursorT,ReverseChildren>::next() {
           (c >= MidPoint))
       {
         pos.finishedMidPoint = true;
-        atStop = stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue();
+        atStop = atStopNode();
       } else {
         pos.lastChildDone = c;
         cursor_.goChild(ReverseChildren ? (CursorT::Radix - c - 1) : c);

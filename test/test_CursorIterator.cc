@@ -55,7 +55,8 @@ std::string comparePathValueIter(TreeSpotListT&& tsl,CursorIteratorT&& cit) {
   using PathValueType = typename std::decay<TreeSpotListT>::type::PathValueType;
   const std::vector<std::size_t>& spotSequence(tsl.treeSpotSequence());
   const std::vector<PathValueType>& spotValues(tsl.treeSpots());
-  for (std::size_t i = 0;i < spotSequence.size(); ++i) {
+  std::size_t i = 0;
+  while (!cit.finished()) {
     uint32_t expectedValue = spotValues.at(spotSequence.at(i)).value;
     if (!cit->atValue()) {
       return "Iterator missing value at sequence " + std::to_string(i) + " expected " + std::to_string(expectedValue);
@@ -67,7 +68,13 @@ std::string comparePathValueIter(TreeSpotListT&& tsl,CursorIteratorT&& cit) {
              " expected " + std::to_string(expectedValue);
     }
     ++cit;
+    ++i;
   }
+  if (i != spotSequence.size()) {
+    return "Iterator finished at wrong place in sequence, got " + std::to_string(i) +
+           " expected " + std::to_string(spotSequence.size());
+  }
+
   return "OK";
 }
 

@@ -74,6 +74,7 @@ public:
   PathType getPath() const { return curPath_; }
   
   bool atNode() const { return (depthBelow_ == 0); }
+  bool atLeafNode() const { return atNode() && Node{alloc_,nodeRefAtAbove_}.isLeaf(); }
 
   bool atValue() const { return (atNode() && coveringNode().hasValue()); }
 
@@ -161,6 +162,7 @@ public:
   PathType getPath() const { return curPath_; }
   
   bool atNode() const { return (depthBelow_ == 0); }
+  bool atLeafNode() const { return atNode() && Node{alloc_,nodeRefAtAbove_}.isLeaf(); }
 
   bool atValue() const { return (atNode() && coveringNode().hasValue()); }
 

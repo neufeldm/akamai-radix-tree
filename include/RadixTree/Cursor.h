@@ -75,6 +75,7 @@ public:
    * \return whether or not the cursor is at a node
    */
   bool atNode() const { return (curPath_.size() == nodeStack_.back().depth); }
+  bool atLeafNode() const { return atNode() && backNode().isLeaf(); }
 
   /**
    * \brief Check to see if the cursor is currently at a value (and implicitly a node) in the tree.
