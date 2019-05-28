@@ -40,14 +40,14 @@ namespace RadixTree {
  * Takes a cursor, on each call to next() moves to next place in the
  * underlying tree in pre-order that has a value.
  */
-template <typename CursorT,bool ReverseChildren = false>
+template <typename CursorT,bool ReverseChildren = false,bool StopAtAllNodes = false>
 class CursorIteratorPre {
 public:
   using CursorType = CursorT;
 
   CursorIteratorPre() = default;
-  CursorIteratorPre(const CursorT& c,bool stopAtAllNodes = false) : cursor_(c), stopAtAllNodes_(stopAtAllNodes) { reset(); }
-  CursorIteratorPre(CursorT&& c, bool stopAtAllNodes = false) : cursor_(std::move(c)), stopAtAllNodes_(stopAtAllNodes) { reset(); }
+  CursorIteratorPre(const CursorT& c) : cursor_(c) { reset(); }
+  CursorIteratorPre(CursorT&& c) : cursor_(std::move(c)) { reset(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -70,9 +70,9 @@ public:
    * \brief Go to next position in iterator.
    */
   CursorType& next();
-  CursorIteratorPre<CursorT,ReverseChildren>& operator++() { next(); return *this; }
-  CursorIteratorPre<CursorT,ReverseChildren> operator++(int) {
-    CursorIteratorPre<CursorT,ReverseChildren> tmp(*this);
+  CursorIteratorPre<CursorT,ReverseChildren,StopAtAllNodes>& operator++() { next(); return *this; }
+  CursorIteratorPre<CursorT,ReverseChildren,StopAtAllNodes> operator++(int) {
+    CursorIteratorPre<CursorT,ReverseChildren,StopAtAllNodes> tmp(*this);
     next();
     return tmp;
   }
@@ -98,30 +98,29 @@ private:
   static std::size_t NoChild() { return std::numeric_limits<std::size_t>::max(); }
   std::vector<std::size_t> lastChildDoneStack_{};
   CursorT cursor_{};
-  bool stopAtAllNodes_{false};
-  bool atStopNode() const { return stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue(); }
+  bool atStopNode() const { return StopAtAllNodes ? cursor_.atNode() : cursor_.atValue(); }
 };
 
 /**
  * \brief Convenience function for creating a pre-order iterator.
  */
-template <bool ReverseChildren = false,typename CursorT>
-CursorIteratorPre<typename std::decay<CursorT>::type,ReverseChildren>
-make_preorder_iterator(CursorT&& c) { return CursorIteratorPre<typename std::decay<CursorT>::type,ReverseChildren>(std::forward<CursorT>(c)); }
+template <bool ReverseChildren = false,bool StopAtAllNodes = false,typename CursorT>
+CursorIteratorPre<typename std::decay<CursorT>::type,ReverseChildren,StopAtAllNodes>
+make_preorder_iterator(CursorT&& c) { return CursorIteratorPre<typename std::decay<CursorT>::type,ReverseChildren,StopAtAllNodes>(std::forward<CursorT>(c)); }
 
 /**
  * \brief Performs a post-order iteration with a cursor.
  * Takes a cursor, on each call to next() moves to next place in the
  * underlying tree in post-order that has a value.
  */
-template <typename CursorT,bool ReverseChildren = false>
+template <typename CursorT,bool ReverseChildren = false,bool StopAtAllNodes = false>
 class CursorIteratorPost {
 public:
   using CursorType = CursorT;
 
   CursorIteratorPost() = default;
-  CursorIteratorPost(const CursorT& c,bool stopAtAllNodes = false) : cursor_(c), stopAtAllNodes_(stopAtAllNodes) { reset(); }
-  CursorIteratorPost(CursorT&& c,bool stopAtAllNodes = false) : cursor_(std::move(c)), stopAtAllNodes_(stopAtAllNodes) { reset(); }
+  CursorIteratorPost(const CursorT& c) : cursor_(c) { reset(); }
+  CursorIteratorPost(CursorT&& c) : cursor_(std::move(c)) { reset(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -144,9 +143,9 @@ public:
    * \brief Go to next position in iterator.
    */
   CursorType& next();
-  CursorIteratorPost<CursorT,ReverseChildren>& operator++() { next(); return *this; }
-  CursorIteratorPost<CursorT,ReverseChildren> operator++(int) {
-    CursorIteratorPost<CursorT,ReverseChildren> tmp(*this);
+  CursorIteratorPost<CursorT,ReverseChildren,StopAtAllNodes>& operator++() { next(); return *this; }
+  CursorIteratorPost<CursorT,ReverseChildren,StopAtAllNodes> operator++(int) {
+    CursorIteratorPost<CursorT,ReverseChildren,StopAtAllNodes> tmp(*this);
     next();
     return tmp;
   }
@@ -172,16 +171,15 @@ private:
   static std::size_t NoChild() { return std::numeric_limits<std::size_t>::max(); }
   std::vector<std::size_t> lastChildDoneStack_{};
   CursorT cursor_{};
-  bool stopAtAllNodes_{false};
-  bool atStopNode() const { return stopAtAllNodes_ ? cursor_.atNode() : cursor_.atValue(); }
+  bool atStopNode() const { return StopAtAllNodes ? cursor_.atNode() : cursor_.atValue(); }
 };
 
 /**
  * \brief Convenience function for creating a post-order iterator.
  */
-template <bool ReverseChildren = false,typename CursorT>
-CursorIteratorPost<typename std::decay<CursorT>::type,ReverseChildren>
-make_postorder_iterator(CursorT&& c) { return CursorIteratorPost<typename std::decay<CursorT>::type,ReverseChildren>(std::forward<CursorT>(c)); }
+template <bool ReverseChildren = false,bool StopAtAllNodes = false,typename CursorT>
+CursorIteratorPost<typename std::decay<CursorT>::type,ReverseChildren,StopAtAllNodes>
+make_postorder_iterator(CursorT&& c) { return CursorIteratorPost<typename std::decay<CursorT>::type,ReverseChildren,StopAtAllNodes>(std::forward<CursorT>(c)); }
 
 /**
  * \brief Performs a in-order iteration with a cursor.
@@ -189,15 +187,15 @@ make_postorder_iterator(CursorT&& c) { return CursorIteratorPost<typename std::d
  * underlying tree in in-order that has a value. Only valid for
  * trees that have radix == 0 mod 2.
  */
-template <typename CursorT,bool ReverseChildren = false>
+template <typename CursorT,bool ReverseChildren = false, bool StopAtAllNodes = false>
 class CursorIteratorIn {
 public:
   static_assert((CursorT::Radix % 2) == 0,"in-order iterator only available if radix is even");
   using CursorType = CursorT;
 
   CursorIteratorIn() = default;
-  CursorIteratorIn(const CursorT& c,bool stopAtAllNodes = false) : cursor_(c), stopAtAllNodes_(stopAtAllNodes) { reset(); }
-  CursorIteratorIn(CursorT&& c,bool stopAtAllNodes = false) : cursor_(std::move(c)), stopAtAllNodes_(stopAtAllNodes) { reset(); }
+  CursorIteratorIn(const CursorT& c) : cursor_(c) { reset(); }
+  CursorIteratorIn(CursorT&& c) : cursor_(std::move(c)) { reset(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -220,9 +218,9 @@ public:
    * \brief Go to next position in iterator.
    */
   CursorType& next();
-  CursorIteratorIn<CursorT,ReverseChildren>& operator++() { next(); return *this; }
-  CursorIteratorIn<CursorT,ReverseChildren> operator++(int) {
-    CursorIteratorIn<CursorT,ReverseChildren> tmp(*this);
+  CursorIteratorIn<CursorT,ReverseChildren,StopAtAllNodes>& operator++() { next(); return *this; }
+  CursorIteratorIn<CursorT,ReverseChildren,StopAtAllNodes> operator++(int) {
+    CursorIteratorIn<CursorT,ReverseChildren,StopAtAllNodes> tmp(*this);
     next();
     return tmp;
   }
@@ -254,16 +252,15 @@ private:
   };
   std::vector<IterPos> iterStack_{};
   CursorT cursor_{};
-  bool stopAtAllNodes_{false};
-  bool atStopNode() const { return (cursor_.atValue() || (stopAtAllNodes_ && cursor_.atNode())); }
+  bool atStopNode() const { return (cursor_.atValue() || (StopAtAllNodes && cursor_.atNode())); }
 };
 
 /**
  * \brief Convenience function for creating an in-order iterator.
  */
-template <bool ReverseChildren = false,typename CursorT>
-CursorIteratorIn<typename std::decay<CursorT>::type,ReverseChildren>
-make_inorder_iterator(CursorT&& c) { return CursorIteratorIn<typename std::decay<CursorT>::type,ReverseChildren>(std::forward<CursorT>(c)); }
+template <bool ReverseChildren = false,bool StopAtAllNodes = false,typename CursorT>
+CursorIteratorIn<typename std::decay<CursorT>::type,ReverseChildren,StopAtAllNodes>
+make_inorder_iterator(CursorT&& c) { return CursorIteratorIn<typename std::decay<CursorT>::type,ReverseChildren,StopAtAllNodes>(std::forward<CursorT>(c)); }
 
 /////////////////////
 // IMPLEMENTATIONS //
@@ -271,8 +268,8 @@ make_inorder_iterator(CursorT&& c) { return CursorIteratorIn<typename std::decay
 
 //////////////// CursorIteratorPre
 
-template <typename CursorT,bool ReverseChildren>
-CursorT& CursorIteratorPre<CursorT,ReverseChildren>::reset() {
+template <typename CursorT,bool ReverseChildren,bool StopAtAllNodes>
+CursorT& CursorIteratorPre<CursorT,ReverseChildren,StopAtAllNodes>::reset() {
   // If we've already got a stack, then blow it away and reset our
   // cursor to its root.
   std::size_t cursorAt = lastChildDoneStack_.size();
@@ -287,8 +284,8 @@ CursorT& CursorIteratorPre<CursorT,ReverseChildren>::reset() {
   return (atStopNode() ? cursor_ : next());
 }
 
-template <typename CursorT,bool ReverseChildren>
-CursorT& CursorIteratorPre<CursorT,ReverseChildren>::next() {
+template <typename CursorT,bool ReverseChildren,bool StopAtAllNodes>
+CursorT& CursorIteratorPre<CursorT,ReverseChildren,StopAtAllNodes>::next() {
   bool atStop(false);
   while (!lastChildDoneStack_.empty() && !atStop) {
     std::size_t& lastChildDone = lastChildDoneStack_.back();
@@ -313,8 +310,8 @@ CursorT& CursorIteratorPre<CursorT,ReverseChildren>::next() {
 
 //////////////// CursorIteratorPost
 
-template <typename CursorT,bool ReverseChildren>
-CursorT& CursorIteratorPost<CursorT,ReverseChildren>::reset() {
+template <typename CursorT,bool ReverseChildren,bool StopAtAllNodes>
+CursorT& CursorIteratorPost<CursorT,ReverseChildren,StopAtAllNodes>::reset() {
   // If we've already got a stack, then blow it away and reset our
   // cursor to its root.
   std::size_t cursorAt = lastChildDoneStack_.size();
@@ -329,8 +326,8 @@ CursorT& CursorIteratorPost<CursorT,ReverseChildren>::reset() {
   return next();
 }
 
-template <typename CursorT,bool ReverseChildren>
-CursorT& CursorIteratorPost<CursorT,ReverseChildren>::next() {
+template <typename CursorT,bool ReverseChildren,bool StopAtAllNodes>
+CursorT& CursorIteratorPost<CursorT,ReverseChildren,StopAtAllNodes>::next() {
   bool atStop(false);
   while (!lastChildDoneStack_.empty() && !atStop) {
     std::size_t& lastChildDone = lastChildDoneStack_.back();
@@ -359,8 +356,8 @@ CursorT& CursorIteratorPost<CursorT,ReverseChildren>::next() {
 
 //////////////// CursorIteratorIn
 
-template <typename CursorT,bool ReverseChildren>
-CursorT& CursorIteratorIn<CursorT,ReverseChildren>::reset() {
+template <typename CursorT,bool ReverseChildren,bool StopAtAllNodes>
+CursorT& CursorIteratorIn<CursorT,ReverseChildren,StopAtAllNodes>::reset() {
   // If we've already got a stack, then blow it away and reset our
   // cursor to its root.
   std::size_t cursorAt = iterStack_.size();
@@ -375,8 +372,8 @@ CursorT& CursorIteratorIn<CursorT,ReverseChildren>::reset() {
   return next();
 }
 
-template <typename CursorT,bool ReverseChildren>
-CursorT& CursorIteratorIn<CursorT,ReverseChildren>::next() {
+template <typename CursorT,bool ReverseChildren,bool StopAtAllNodes>
+CursorT& CursorIteratorIn<CursorT,ReverseChildren,StopAtAllNodes>::next() {
   bool atStop(false);
   while (!iterStack_.empty() && !atStop) {
     IterPos& pos = iterStack_.back();
