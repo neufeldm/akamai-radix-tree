@@ -46,6 +46,9 @@ public:
   }
   NodeValue nodeValue() const { return nodeValueRO(); }
 
+  template <typename NewValueType>
+  NewValueType valueCopyAs() const { return static_cast<NewValueType>(valueCopy()); }
+
 private:
   std::unique_ptr<CursorImplType> cursorImpl_{};
 };

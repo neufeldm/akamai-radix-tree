@@ -47,7 +47,6 @@ public:
 
   CursorIteratorPre() = default;
   CursorIteratorPre(const CursorT& c) : cursor_(c) { reset(); }
-  CursorIteratorPre(CursorT&& c) : cursor_(std::move(c)) { reset(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -120,7 +119,6 @@ public:
 
   CursorIteratorPost() = default;
   CursorIteratorPost(const CursorT& c) : cursor_(c) { reset(); }
-  CursorIteratorPost(CursorT&& c) : cursor_(std::move(c)) { reset(); }
 
   /**
    * \brief Access underlying cursor object.
@@ -195,8 +193,7 @@ public:
 
   CursorIteratorIn() = default;
   CursorIteratorIn(const CursorT& c) : cursor_(c) { reset(); }
-  CursorIteratorIn(CursorT&& c) : cursor_(std::move(c)) { reset(); }
-
+  
   /**
    * \brief Access underlying cursor object.
    */

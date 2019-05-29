@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <string>
 #include <array>
+#include <type_traits>
 
 #include "CursorIterator.h"
 
@@ -23,10 +24,10 @@ struct BinaryWORMTreeUIntParams {
 };
 
 template <typename PathT>
-using BinaryWORMTreeUIntCursor = BinaryWORMCursorROGeneric<PathT,uint64_t>;
+using BinaryWORMTreeUIntCursorGeneric = BinaryWORMCursorROGeneric<PathT,uint64_t>;
 
 template <typename PathT>
-class BinaryWORMTreeUInt
+class BinaryWORMTreeUIntGeneric
   : public BinaryWORMTreeGeneric<PathT,uint64_t>
 {
 public:
@@ -41,7 +42,6 @@ private:
   BinaryWORMTreeUIntParams treeParams_{};
 };
 
-
 template <bool LITTLEENDIAN,std::size_t OFFSETSIZE,std::size_t VALUESIZE>
 using BinaryWORMNodeUIntWO = BinaryWORMNodeWO<OFFSETSIZE,LITTLEENDIAN,BinaryWORMReadWriteUInt<VALUESIZE,LITTLEENDIAN>>;
 
@@ -54,9 +54,14 @@ using BinaryWORMTreeUIntBuilder = BinaryWORMTreeBuilder<BufferT,PathT,BinaryWORM
 template <typename BufferT,typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE,std::size_t VALUESIZE>
 using BinaryWORMTreeUInt = BinaryWORMTree<BufferT,PathT,BinaryWORMNodeUIntRO<LITTLEENDIAN,OFFSETSIZE,VALUESIZE>>;
 
-template <typename CursorType>
-BinaryWORMTreeUIntParams findMinimumUIntWORMParameters(CursorType&& c) {
-  using PathType = typename CursorType::PathType;
+template <typename CursorT>
+BinaryWORMTreeUIntParams findMinimumWORMTreeUIntParameters(const CursorT& c) {
+  static_assert(std::is_unsigned<typename CursorT::ValueType>::value,
+                "findMinimumWORMTreeUIntParameters: source tree must be of unsigned integer type");
+  static_assert(sizeof(typename CursorT::ValueType) <= 8,
+                "findMinimumWORMTreeUIntParameters: source tree value too large for uint64_t");
+
+  using PathType = typename CursorT::PathType;
   BinaryWORMTreeUIntParams treeParams{};
   // do a dry run with 8 and 8 for the byte count, lttle/big endian doesn't matter
   BinaryWORMTreeUIntBuilder<std::vector<uint8_t>,PathType,false,sizeof(uint64_t),sizeof(uint64_t)> dryRunBuilder;
@@ -86,10 +91,26 @@ BinaryWORMTreeUIntParams findMinimumUIntWORMParameters(CursorType&& c) {
 }
 
 template <typename CursorType,typename BufferType>
-BufferType buildUIntWormTree(CursorType&& treeNodeIter, BufferType&& buffer,
-                             bool littleEndian,std::size_t offsetSize,std::size_t uintValueSize) {
+BufferType
+buildWormTreeUIntBuffer(const BinaryWORMTreeUIntParams& treeParams,const CursorType& treeCursor, BufferType&& buffer)
+{
+  static_assert(std::is_unsigned<typename CursorT::ValueType>::value,
+                "buildWORMTreeUIntBuffer: source tree must be of unsigned integer type");
+  static_assert(sizeof(typename CursorT::ValueType) <= 8,
+                "buildWORMTreeUIntBuffer: source tree value too large for uint64_t");
 
 }
+
+template <typename CursorT,typename BufferT = std::vector<uint8_t>>
+BinaryWORMTreeUIntGeneric<typename std::decay<CursorT>::type::PathType>
+buildWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,const CursorT& sourceCursor)
+{
+  static_assert(std::is_unsigned<typename CursorT::ValueType>::value,
+                "buildWORMTreeUIntGeneric: source tree value must be unsigned integer");
+  static_assert(sizeof(typename CursorT::ValueType) <= 8,
+                "buildWORMTreeUIntGeneric: source tree value too large for uint64_t");
+}
+
 
 } // namespace RadixTree
 } // namespace Mapper
