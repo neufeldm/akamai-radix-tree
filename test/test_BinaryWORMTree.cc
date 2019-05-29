@@ -41,6 +41,7 @@ SOFTWARE.
 #include "BinaryWORMTree.h"
 #include "BinaryWORMTreeBuilder.h"
 #include "BinaryWORMCursorRO.h"
+//#include "BinaryWORMTreeUInt.h"
 
 using namespace Akamai::Mapper::RadixTree;
 

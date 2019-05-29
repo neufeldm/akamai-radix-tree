@@ -18,17 +18,17 @@ public:
   static constexpr std::size_t Radix = 2;
   static constexpr std::size_t MaxDepth = PathT::MaxDepth;
   using PathType = PathT;
-  using NodeValueRO = BinaryWORMValueCopyRO<ValueType>;
+  using ValueType = ValueT;
+  using NodeValueRO = BinaryWORMValueCopyRO<uint64_t>;
   using NodeValue = NodeValueRO;
-  using BinaryWORMNodeType = BinaryWORMNodeT;
-  using OffsetType = typename BinaryWORMNodeT::OffsetType;
-  using EdgeWordType = typename BinaryWORMNodeT::EdgeWordType;
-  using CursorImplType = GenericBinaryWORMCursorROImpl<MAXDEPTH,ValueT>;
+  using NodeHeader = BinaryWORMNodeHeaderRO<sizeof(uint64_t),false>;
+  using OffsetType = typename NodeHeader::OffsetType;
+  using EdgeWordType = typename NodeHeader::EdgeWordType;
+  using CursorImplType = BinaryWORMCursorROGenericImpl<PathT,ValueT>;
   
   BinaryWORMCursorROGeneric() = default;
   virtual ~BinaryWORMCursorROGeneric() = default;
 
-  PathType getPath() const { return curPath_; }
   bool atNode() const { return cursorImpl_->atNode(); }
   bool atLeafNode() const { return cursorImpl_->atLeafNode(); }
   bool atValue() const { return cursorImpl_->atValue(); }
@@ -46,6 +46,8 @@ public:
   }
   NodeValue nodeValue() const { return nodeValueRO(); }
 
+  ValueType valueCopy() const { return cursorImpl_->valueCopy(); }
+
   template <typename NewValueType>
   NewValueType valueCopyAs() const { return static_cast<NewValueType>(valueCopy()); }
 
@@ -58,8 +60,8 @@ class BinaryWORMCursorROGenericImpl {
   using PathType = PathT;
   using ValueType = ValueT;
 
-  GenericBinaryWORMCursorROGenericImpl() = default;
-  virtual ~GenericBinaryWORMCursorROGenericImpl() = default;
+  BinaryWORMCursorROGenericImpl() = default;
+  virtual ~BinaryWORMCursorROGenericImpl() = default;
 
   virtual bool atNode() const = 0;
   virtual bool atLeafNode() const = 0;
@@ -72,32 +74,6 @@ class BinaryWORMCursorROGenericImpl {
   virtual PathType getPath() const = 0;
 
   virtual ValueType valueCopy() const = 0;
-};
-
-template <typename CursorImplT>
-class BinaryWORMCursorROGenericGlue
-  : public BinaryWORMCursorROGenericImpl<typename CursorImplT::PathType,typename CursorImplT::ValueType>
-  , public CursorImplT
-{
-public:
-  using PathType = typename CursorImplT::PathType;
-  using ValueType = typename CursorImplT::ValueType;
-  using CursorImpl = CursorImplT;
-  using GenericImpl = BinaryWORMCursorROGenericImpl<PathType,ValueType>;
-  BinaryWORMCursorROGenericGlue() = default;
-  template <typename... ConstructorArgs>
-  BinaryWORMCursorROGenericGlue(ConstructorArgs&& cargs...) : CursorImpl(std::forward<ConstructorArgs>(cargs)...) {}
-  virtual ~BinaryWORMCursorROGenericGlue() = default;
-
-  virtual bool GenericImpl::atNode() const override { return CursorImpl::atNode(); }
-  virtual bool GenericImpl::atLeafNode() const override { return CursorImpl::atLeafNode(); }
-  virtual bool GenericImpl::atValue() const override { return CursorImpl::atValue(); }
-  virtual bool GenericImpl::goChild(std::size_t child) override { return CursorImpl::goChild(child); }
-  virtual bool GenericImpl::canGoChild(std::size_t child) const override { return CursorImpl::canGoChild(child); }
-  virtual bool GenericImpl::canGoChildNode(std::size_t child) const override { return CursorImpl::canGoChildNMode(child); }
-  virtual bool GenericImpl::goParent() override { return CursorImpl::goParent(); }
-  virtual bool GenericImpl::canGoParent() const override { return CursorImpl::canGoParent(); }
-  virtual ValueType GenericImpl::valueCopy() const override { return *(CursorImpl::nodeValueRO().getPtr()); }
 };
 
 template <typename PathT,typename ValueT>
@@ -144,25 +120,6 @@ public:
 
   virtual CursorROType walkCursorRO() const = 0;
   virtual LookupCursorROType lookupCursorRO() const = 0;
-};
-
-template <typename TreeImplT>
-class BinaryWORMTreeGenericGlue
-  : public BinaryWORMTreeGenericImpl<typename TreeImplT::PathType,typename TreeImplT::ValueType>
-  , public TreeImplT
-{
-public:
-  using PathType = typename TreeImplT::PathType;
-  using ValueType = typename TreeImplT::ValueType;
-  using GenericImpl = BinaryWORMTreeGenericImpl<PathType,ValueType>;
-  using TreeImpl = TreeImplT;
-  BinaryWORMTreeGenericGlue() = default;
-  template <typename... ConstructorArgs>
-  BinaryWORMTreeGenericGlue(ConstructorArgs&& cargs...) : CursorImpl(std::forward<ConstructorArgs>(cargs)...) {}
-  virtual ~BinaryWORMTreeROGenericGlue() = default;
-
-  virtual CursorROType GenericImpl::walkCursorRO() const override { return TreeImpl::walkCursorRO(); }
-  virtual LookupCursorROType GenericImpl::lookupCursorRO() const override { return TreeImpl::lookupCursorRO(); }
 };
 
 } // namespace RadixTree
