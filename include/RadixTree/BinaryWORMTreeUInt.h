@@ -1,6 +1,28 @@
 #ifndef AKAMAI_MAPPER_RADIX_TREE_BINARY_WORM_TREE_UINT_H_
 #define AKAMAI_MAPPER_RADIX_TREE_BINARY_WORM_TREE_UINT_H_
 
+/*
+Copyright (c) 2019 Akamai Technologies, Inc
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 #include <stdint.h>
 #include <cstddef>
 #include <string>
@@ -18,10 +40,13 @@ namespace Akamai {
 namespace Mapper {
 namespace RadixTree {
 
+/**
+ * \brief Contains the size/value/endian parameters for a Binary WORM tree.
+ */
 struct BinaryWORMTreeUIntParams {
-  std::size_t offsetSize{0};
-  std::size_t valueSize{0};
-  bool isLittleEndian{false};
+  std::size_t offsetSize{0}; ///< Size in bytes of offset unsigned integer.
+  std::size_t valueSize{0}; ///< Size in bytes of value unsigned integer.
+  bool isLittleEndian{false}; ///< Whether the offset and value are little endian.
 };
 
 template <typename PathT>
@@ -42,7 +67,6 @@ public:
 private:
   BinaryWORMTreeUIntParams treeParams_{};
 };
-
 
 template <bool LITTLEENDIAN,std::size_t OFFSETSIZE,std::size_t VALUESIZE>
 using BinaryWORMNodeUIntWO = BinaryWORMNodeWO<OFFSETSIZE,LITTLEENDIAN,BinaryWORMReadWriteUInt<VALUESIZE,LITTLEENDIAN>>;

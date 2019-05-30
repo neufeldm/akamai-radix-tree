@@ -323,39 +323,39 @@ TEST(BinaryWORMTree, SmallTrees) {
 
   r = testFillTree<1,4,3>();
   ASSERT_EQ(r,"OK");
-  //r = testFillTreeGeneric<3>();
-  //ASSERT_EQ(r,"OK");
+  r = testFillTreeGeneric<3>();
+  ASSERT_EQ(r,"OK");
 
   r = testFillTree<1,4,4>();
   ASSERT_EQ(r,"OK");
-  //r = testFillTreeGeneric<4>();
-  //ASSERT_EQ(r,"OK");
+  r = testFillTreeGeneric<4>();
+  ASSERT_EQ(r,"OK");
 
 
   r = testFillSomeRandom<1,4,4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
   ASSERT_EQ(r,"OK");
-  //r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
-  //ASSERT_EQ(r,"OK");
+  r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
+  ASSERT_EQ(r,"OK");
 
   r = testFillTree<3,4,4>();
   ASSERT_EQ(r,"OK");
-  //r = testFillTreeGeneric<4>();
-  //ASSERT_EQ(r,"OK");
+  r = testFillTreeGeneric<4>();
+  ASSERT_EQ(r,"OK");
 
   r = testFillSomeRandom<3,4,4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
   ASSERT_EQ(r,"OK");
-  //r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
-  //ASSERT_EQ(r,"OK");
+  r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
+  ASSERT_EQ(r,"OK");
 
   r = testFillTree<4,4,4>();
   ASSERT_EQ(r,"OK");
-  //r = testFillTreeGeneric<4>();
-  //ASSERT_EQ(r,"OK");
+  r = testFillTreeGeneric<4>();
+  ASSERT_EQ(r,"OK");
 
   r = testFillSomeRandom<4,4,4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
   ASSERT_EQ(r,"OK");
-  //r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
-  //ASSERT_EQ(r,"OK");
+  r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
+  ASSERT_EQ(r,"OK");
 }
 
 TEST(BinaryWORMTree, MediumTrees) {

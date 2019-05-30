@@ -1,17 +1,79 @@
 #ifndef AKAMAI_MAPPER_RADIX_TREE_BINARY_WORM_TREE_GENERIC_H_
 #define AKAMAI_MAPPER_RADIX_TREE_BINARY_WORM_TREE_GENERIC_H_
 
+/*
+Copyright (c) 2019 Akamai Technologies, Inc
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 #include <stdint.h>
 #include <cstddef>
 #include <memory>
+
+/**
+ * \file BinaryWORMTreeGeneric.h
+ * 
+ *  Generic wrappers to use with binary WORM trees. An intended use case for
+ *  WORM trees is as a serializable/memory-mappable generic byte buffer.
+ *  However, the WORM tree implementation in this library is heavily templated
+ *  based on the size and endian of the underlying node offsets, making it awkward
+ *  to seamlessly work with WORM tree buffers that have different parameters.
+ *  This file contains some wrapper interfaces that can be used to hide the
+ *  underlying details within polymorphism.
+ */
 
 namespace Akamai {
 namespace Mapper {
 namespace RadixTree {
 
+/**
+ * \brief Abstract interface for a WORM cursor.
+ * 
+ */
 template <typename PathT,typename ValueT>
-class BinaryWORMCursorROGenericImpl;
+class BinaryWORMCursorROGenericImpl {
+public:
+  using PathType = PathT;
+  using ValueType = ValueT;
 
+  BinaryWORMCursorROGenericImpl() = default;
+  virtual ~BinaryWORMCursorROGenericImpl() = default;
+
+  virtual bool atNode() const = 0;
+  virtual bool atLeafNode() const = 0;
+  virtual bool atValue() const = 0;
+  virtual bool goChild(std::size_t child) = 0;
+  virtual bool canGoChild(std::size_t child) const = 0;
+  virtual bool canGoChildNode(std::size_t child) const = 0;
+  virtual bool goParent() = 0;
+  virtual bool canGoParent() const = 0;
+  virtual PathType getPath() const = 0;
+
+  virtual ValueType valueCopy() const = 0;
+
+  virtual BinaryWORMCursorROGenericImpl<PathType,ValueType>* copy() const = 0;
+};
+
+/**
+ * \brief Holds a unique pointer to an underlying generic cursor implementation.
+ */
 template <typename PathT,typename ValueT>
 class BinaryWORMCursorROGeneric {
 public:
@@ -59,32 +121,24 @@ private:
   std::unique_ptr<CursorImplType> cursorImpl_{};
 };
 
+
 template <typename PathT,typename ValueT>
-class BinaryWORMCursorROGenericImpl {
+class BinaryWORMTreeGenericImpl
+{
 public:
   using PathType = PathT;
-  using ValueType = ValueT;
+  using CursorROType = BinaryWORMCursorROGeneric<PathT,ValueT>;
+  using CursorType = CursorROType;
+  using LookupCursorROType = CursorROType;
+  using ValueTypeRO = typename CursorROType::ValueType;
+  using ValueType = ValueTypeRO;
+  
+  BinaryWORMTreeGenericImpl() = default;
+  virtual ~BinaryWORMTreeGenericImpl() = default;
 
-  BinaryWORMCursorROGenericImpl() = default;
-  virtual ~BinaryWORMCursorROGenericImpl() = default;
-
-  virtual bool atNode() const = 0;
-  virtual bool atLeafNode() const = 0;
-  virtual bool atValue() const = 0;
-  virtual bool goChild(std::size_t child) = 0;
-  virtual bool canGoChild(std::size_t child) const = 0;
-  virtual bool canGoChildNode(std::size_t child) const = 0;
-  virtual bool goParent() = 0;
-  virtual bool canGoParent() const = 0;
-  virtual PathType getPath() const = 0;
-
-  virtual ValueType valueCopy() const = 0;
-
-  virtual BinaryWORMCursorROGenericImpl<PathType,ValueType>* copy() const = 0;
+  virtual CursorROType walkCursorRO() const = 0;
+  virtual LookupCursorROType lookupCursorRO() const = 0;
 };
-
-template <typename PathT,typename ValueT>
-class BinaryWORMTreeGenericImpl;
 
 template <typename PathT,typename ValueT>
 class BinaryWORMTreeGeneric
@@ -109,24 +163,6 @@ public:
 
 private:
   std::shared_ptr<TreeImplType> treeImpl_{};
-};
-
-template <typename PathT,typename ValueT>
-class BinaryWORMTreeGenericImpl
-{
-public:
-  using PathType = PathT;
-  using CursorROType = BinaryWORMCursorROGeneric<PathT,ValueT>;
-  using CursorType = CursorROType;
-  using LookupCursorROType = CursorROType;
-  using ValueTypeRO = typename CursorROType::ValueType;
-  using ValueType = ValueTypeRO;
-  
-  BinaryWORMTreeGenericImpl() = default;
-  virtual ~BinaryWORMTreeGenericImpl() = default;
-
-  virtual CursorROType walkCursorRO() const = 0;
-  virtual LookupCursorROType lookupCursorRO() const = 0;
 };
 
 } // namespace RadixTree
