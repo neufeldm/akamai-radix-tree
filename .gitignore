@@ -4,4 +4,5 @@
 Makefile
 CMakeFiles
 build-release
+build-debug
 .vscode

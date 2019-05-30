@@ -80,7 +80,7 @@ public:
 
   virtual ValueType valueCopy() const = 0;
 
-  virtual BinaryWORMCursorROGenericImpl<PathType,ValueType>* copy() const;
+  virtual BinaryWORMCursorROGenericImpl<PathType,ValueType>* copy() const = 0;
 };
 
 template <typename PathT,typename ValueT>

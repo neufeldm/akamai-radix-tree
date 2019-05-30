@@ -83,7 +83,7 @@ public:
   virtual bool canGoParent() const override { return actualCursor_.canGoParent(); }
   virtual PathType getPath() const override { return actualCursor_.getPath(); }
   virtual ValueType valueCopy() const override { return static_cast<uint64_t>(*(actualCursor_.nodeValueRO().getPtrRO())); }
-  virtual GenericImpl* copy() const override { return new BinaryWORMCursorUIntGenericImpl<ActualImplT>(*this); }
+  virtual GenericImpl* copy() const override { return new BinaryWORMCursorUIntGenericImpl<ActualImplT>(actualCursor_); }
 
   const ActualImplT& actualCursor() const { return actualCursor_; }
   ActualImplT& actualCursor() { return actualCursor_; }
@@ -184,7 +184,7 @@ buildBinaryWORMTreeUIntBuffer(const CursorT& cursor,BufferT&& buffer) {
   using WormValueType = typename BuilderType::ValueType;
   BuilderType wormBuilder(std::move(buffer));
   auto treeIter = make_preorder_iterator<false,true>(cursor);
-  if (!wormBuilder.start(true)) {
+  if (!wormBuilder.start(false)) {
     throw std::runtime_error("Unable to start building WORM tree!");
   }
   while (!treeIter.finished()) {
