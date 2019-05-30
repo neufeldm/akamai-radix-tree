@@ -41,7 +41,7 @@ SOFTWARE.
 #include "BinaryWORMTree.h"
 #include "BinaryWORMTreeBuilder.h"
 #include "BinaryWORMCursorRO.h"
-//#include "BinaryWORMTreeUInt.h"
+#include "BinaryWORMTreeUInt.h"
 
 using namespace Akamai::Mapper::RadixTree;
 
@@ -245,6 +245,27 @@ std::string buildAndCheckWORM(TreeSpotList<PathVal<DEPTH>>& tsl,bool showAddedNo
   return "OK";
 }
 
+template <std::size_t DEPTH>
+std::string buildAndCheckWORMGeneric(TreeSpotList<PathVal<DEPTH>>& tsl) {
+  using TreeType = BinaryTreeUInt32<DEPTH>;
+  using PathType = typename TreeType::CursorType::PathType;
+  TreeType tree{};
+  tsl.addToTree(tree.cursor());
+  BinaryWORMTreeUIntParams minWORMParams = findMinimumWORMTreeUIntParameters(tree.cursorRO());
+  BinaryWORMTreeUIntGeneric<PathType> wormTree = buildWORMTreeUIntGeneric(minWORMParams,tree.cursorRO());
+
+  // compare with our original list
+  std::string r{};
+  r = tsl.checkTree(wormTree.cursorRO());
+  if (r != "OK") { return "[Check cursorRO] " + r; }
+  r = tsl.checkTree(wormTree.cursorRO(),true);
+  if (r != "OK") { return "[Check cursorRO from root] " + r; }
+  r = tsl.checkTreeNewCursor([&wormTree](){return wormTree.lookupCursorRO();});
+  if (r != "OK") { return "[Check lookupCursorRO] " +  r; }
+
+  return "OK";
+}
+
 
 template <std::size_t WORMOFFSET,std::size_t WORMINT,std::size_t DEPTH>
 std::string testFillTree() {
@@ -268,29 +289,73 @@ std::string testFillSomeRandom(const std::vector<double>& fillRatios) {
   return "OK";
 }
 
+template <std::size_t DEPTH>
+std::string testFillTreeGeneric() {
+  std::string testIDStr = "[FillAllGeneric-" + std::to_string(DEPTH) + "]";
+  TreeSpotList<PathVal<DEPTH>> filledTree = spotListFillTree<PathVal<DEPTH>>();
+  std::string r = buildAndCheckWORMGeneric<DEPTH>(filledTree);
+  if (r != "OK") { return testIDStr + r; }
+  return "OK";
+}
+
+template <std::size_t DEPTH>
+std::string testFillSomeRandomGeneric(const std::vector<double>& fillRatios) {
+  std::string baseTestIDStr = "FillSomeRandomGeneric-" + std::to_string(DEPTH);
+  RandomNumbers<uint64_t> rn(RandomSeeds::seed(0));
+  for (double fillRatio : fillRatios) {
+    std::string testIDStr = "[" + baseTestIDStr + "-" + std::to_string(fillRatio) + "] ";
+    TreeSpotList<PathVal<DEPTH>> curFill = spotListFillSomeOfTree<PathVal<DEPTH>>(rn,fillRatio);
+    std::string r = buildAndCheckWORMGeneric<DEPTH>(curFill);
+    if (r != "OK") { return testIDStr + r; }
+  }
+  return "OK";
+}
+
+
 
 TEST(BinaryWORMTree, SmallTrees) {
   std::string r;
   r = testFillTree<1,4,2>();
   ASSERT_EQ(r,"OK");
+  r = testFillTreeGeneric<2>();
+  ASSERT_EQ(r,"OK");
+
 
   r = testFillTree<1,4,3>();
   ASSERT_EQ(r,"OK");
+  //r = testFillTreeGeneric<3>();
+  //ASSERT_EQ(r,"OK");
 
   r = testFillTree<1,4,4>();
   ASSERT_EQ(r,"OK");
+  //r = testFillTreeGeneric<4>();
+  //ASSERT_EQ(r,"OK");
+
+
   r = testFillSomeRandom<1,4,4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
   ASSERT_EQ(r,"OK");
+  //r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
+  //ASSERT_EQ(r,"OK");
 
- r = testFillTree<3,4,4>();
+  r = testFillTree<3,4,4>();
   ASSERT_EQ(r,"OK");
+  //r = testFillTreeGeneric<4>();
+  //ASSERT_EQ(r,"OK");
+
   r = testFillSomeRandom<3,4,4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
   ASSERT_EQ(r,"OK");
+  //r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
+  //ASSERT_EQ(r,"OK");
 
   r = testFillTree<4,4,4>();
   ASSERT_EQ(r,"OK");
+  //r = testFillTreeGeneric<4>();
+  //ASSERT_EQ(r,"OK");
+
   r = testFillSomeRandom<4,4,4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
   ASSERT_EQ(r,"OK");
+  //r = testFillSomeRandomGeneric<4>({0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1});
+  //ASSERT_EQ(r,"OK");
 }
 
 TEST(BinaryWORMTree, MediumTrees) {

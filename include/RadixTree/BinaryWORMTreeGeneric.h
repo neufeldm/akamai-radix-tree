@@ -27,6 +27,10 @@ public:
   using CursorImplType = BinaryWORMCursorROGenericImpl<PathT,ValueT>;
   
   BinaryWORMCursorROGeneric() = default;
+  BinaryWORMCursorROGeneric(BinaryWORMCursorROGeneric&& o) = default;
+  BinaryWORMCursorROGeneric(std::unique_ptr<CursorImplType>&& o) : cursorImpl_(std::move(o)) {}
+  BinaryWORMCursorROGeneric(const BinaryWORMCursorROGeneric& o) : cursorImpl_(o.cursorImpl_->copy()) {}
+  // XXX add copy/move = operators as well
   virtual ~BinaryWORMCursorROGeneric() = default;
 
   bool atNode() const { return cursorImpl_->atNode(); }
@@ -57,6 +61,7 @@ private:
 
 template <typename PathT,typename ValueT>
 class BinaryWORMCursorROGenericImpl {
+public:
   using PathType = PathT;
   using ValueType = ValueT;
 
@@ -74,6 +79,8 @@ class BinaryWORMCursorROGenericImpl {
   virtual PathType getPath() const = 0;
 
   virtual ValueType valueCopy() const = 0;
+
+  virtual BinaryWORMCursorROGenericImpl<PathType,ValueType>* copy() const;
 };
 
 template <typename PathT,typename ValueT>

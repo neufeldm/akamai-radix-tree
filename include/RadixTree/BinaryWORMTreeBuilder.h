@@ -227,7 +227,7 @@ public:
    * \brief Provide a buffer manager as well as an optional value writer.
    */
   BinaryWORMTreeBuilder(Buffer&& mb,bool rejectEmptyLeaf = false,const WriteValueType& wv = WriteValueType{})
-    : rejectEmptyLeaf_(rejectEmptyLeaf), buffer_(std::move<Buffer>(mb)), writeValue_(wv) {}
+    : rejectEmptyLeaf_(rejectEmptyLeaf), buffer_(std::move(mb)), writeValue_(wv) {}
 
   virtual ~BinaryWORMTreeBuilder() = default;
   

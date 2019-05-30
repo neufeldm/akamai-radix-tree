@@ -138,7 +138,7 @@ public:
   bool canGoChildNode(std::size_t child) const {
     if (depthBelow_ == 0) { return (coveringNode().getChild(child) != nullptr); }
     if (nodeBelow_ == nullptr) { return false; }
-    return (edgeToBelow_.at(0) == child);
+    return (firstEdgeStep() == child);
   }
   bool hasChildNode(std::size_t child) const { return canGoChildNode(child); }
  
@@ -148,6 +148,8 @@ public:
   inline NodeValue coveringNodeValueRO() const;
   inline NodeValue nodeValue() const;
   NodeValue nodeValueRO() const { return nodeValue(); }
+
+  bool atLeafNode() const { return (atNode() && !(hasChildNode(0) || hasChildNode(1))); }
 
 private:
   using Node = BinaryWORMNodeType;
