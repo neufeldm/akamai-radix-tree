@@ -36,6 +36,16 @@ SOFTWARE.
 #include "BinaryWORMTreeBuilder.h"
 #include "BinaryWORMTreeGeneric.h"
 
+/**
+ * \file BinaryWORMTreeUInt.h
+ * 
+ * An expected extremely common use case for the binary WORM tree
+ * is to store unsigned integers. The generic interface eases the use
+ * of the WORM tree format for compact serialization. It becomes much
+ * easier to deal with WORM trees that use different numbers of bytes
+ * to represent offsets and values.
+ */
+
 namespace Akamai {
 namespace Mapper {
 namespace RadixTree {
@@ -49,6 +59,11 @@ struct BinaryWORMTreeUIntParams {
   bool isLittleEndian{false}; ///< Whether the offset and value are little endian.
 };
 
+/**
+ * \brief Tree wrapper specialized for UInt value WORM trees.
+ * 
+ * Stores underlying properties of the tree buffer as metadata.
+ */
 template <typename PathT>
 class BinaryWORMTreeUIntGeneric
   : public BinaryWORMTreeGeneric<PathT,uint64_t>
@@ -80,10 +95,15 @@ using BinaryWORMTreeUIntBuilder = BinaryWORMTreeBuilder<BufferT,PathT,BinaryWORM
 template <typename BufferT,typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE,std::size_t VALUESIZE>
 using BinaryWORMTreeUInt = BinaryWORMTree<BufferT,PathT,BinaryWORMNodeUIntRO<LITTLEENDIAN,OFFSETSIZE,VALUESIZE>>;
 
-
+/**
+ * \brief Generic UINT cursor type, uses uint64_t as value so that up to 8 bytes per value integer may be used.
+ */
 template <typename PathT>
 using BinaryWORMCursorUIntGeneric = BinaryWORMCursorROGeneric<PathT,uint64_t>;
 
+/**
+ * \brief Wraps an actual WORM UINT cursor instance inside of the generic cursor interface.
+ */
 template <typename ActualImplT>
 class BinaryWORMCursorUIntGenericImpl
   : public BinaryWORMCursorROGenericImpl<typename ActualImplT::PathType,uint64_t>
@@ -128,6 +148,9 @@ using BinaryWORMCursorUIntImpl = BinaryWORMCursorUIntGenericImpl<BinaryWORMCurso
 template <typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE,std::size_t VALUESIZE>
 using BinaryWORMLookupCursorUIntImpl = BinaryWORMCursorUIntGenericImpl<BinaryWORMLookupCursorUInt<PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE>>;
 
+/**
+ * \brief Wraps WORM UINT tree implementation in generic wrapper.
+ */
 template <typename BufferT,typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE,std::size_t VALUESIZE>
 class BinaryWORMTreeUIntGenericImpl
   : public BinaryWORMTreeGenericImpl<PathT,uint64_t>
@@ -155,6 +178,20 @@ public:
 private:
   ActualImpl actualTree_{};
 };
+
+template <typename CursorT>
+inline
+BinaryWORMTreeUIntParams
+findMinimumWORMTreeUIntParameters(const CursorT& c);
+
+template <typename CursorT,typename BufferT = std::vector<uint8_t>>
+inline
+BinaryWORMTreeUIntGeneric<typename std::decay<CursorT>::type::PathType>
+buildWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,const CursorT& sourceCursor);
+
+/////////////////////
+// IMPLEMENTATIONS //
+/////////////////////
 
 template <typename CursorT>
 BinaryWORMTreeUIntParams findMinimumWORMTreeUIntParameters(const CursorT& c) {
@@ -308,7 +345,7 @@ buildWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,const Cursor
   }
 }
 
-template <typename CursorT,typename BufferT = std::vector<uint8_t>>
+template <typename CursorT,typename BufferT>
 BinaryWORMTreeUIntGeneric<typename std::decay<CursorT>::type::PathType>
 buildWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,const CursorT& sourceCursor)
 {

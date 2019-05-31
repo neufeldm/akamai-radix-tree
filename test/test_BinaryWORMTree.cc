@@ -373,12 +373,16 @@ TEST(BinaryWORMTree, MediumTrees) {
 
   r = testFillSomeRandom<4,4,16>({0.75,0.5,0.25,0.1,0.05});
   ASSERT_EQ(r,"OK");
+  r = testFillSomeRandomGeneric<16>({0.75,0.5,0.25,0.1,0.05});
+  ASSERT_EQ(r,"OK");
 }
 
 TEST(BinaryWORMTree, LargeTrees) {
   std::string r;
 
   r = testFillSomeRandom<4,4,24>({0.05,0.025,0.01});
+  ASSERT_EQ(r,"OK");
+  r = testFillSomeRandomGeneric<24>({0.05,0.025,0.01});
   ASSERT_EQ(r,"OK");
 
   r = testFillSomeRandom<4,4,19>({0.05,0.025,0.01});

@@ -46,6 +46,12 @@ namespace RadixTree {
 /**
  * \brief Abstract interface for a WORM cursor.
  * 
+ * This is largely the same as the baseline cursor interface except
+ * for the "valueCopy" and "copy" methods. The valueCopy method assumes
+ * that the underlying value stored in a WORM tree is small and cheap
+ * to copy. Instead of providing a further polymorphic interface for
+ * NodeValue a generic cursor can simply use the standard binary WORM
+ * "copy" value.
  */
 template <typename PathT,typename ValueT>
 class BinaryWORMCursorROGenericImpl {
@@ -73,12 +79,17 @@ public:
 
 /**
  * \brief Holds a unique pointer to an underlying generic cursor implementation.
+ * 
+ * Having a class on the stack that wraps the generic cursor implementation allows
+ * code using the generic wrappers to look the same as code using the specific
+ * implementations.
  */
 template <typename PathT,typename ValueT>
 class BinaryWORMCursorROGeneric {
 public:
   static constexpr std::size_t Radix = 2;
   static constexpr std::size_t MaxDepth = PathT::MaxDepth;
+  using MyType = BinaryWORMCursorROGeneric<PathT,ValueT>;
   using PathType = PathT;
   using ValueType = ValueT;
   using NodeValueRO = BinaryWORMValueCopyRO<uint64_t>;
@@ -92,7 +103,8 @@ public:
   BinaryWORMCursorROGeneric(BinaryWORMCursorROGeneric&& o) = default;
   BinaryWORMCursorROGeneric(std::unique_ptr<CursorImplType>&& o) : cursorImpl_(std::move(o)) {}
   BinaryWORMCursorROGeneric(const BinaryWORMCursorROGeneric& o) : cursorImpl_(o.cursorImpl_->copy()) {}
-  // XXX add copy/move = operators as well
+  MyType& operator=(const MyType& o) = default;
+  MyType& operator=(MyType&& o) = default;
   virtual ~BinaryWORMCursorROGeneric() = default;
 
   bool atNode() const { return cursorImpl_->atNode(); }
@@ -122,6 +134,9 @@ private:
 };
 
 
+/**
+ * \brief Generic implementation interface for a binary WORM tree.
+ */
 template <typename PathT,typename ValueT>
 class BinaryWORMTreeGenericImpl
 {
