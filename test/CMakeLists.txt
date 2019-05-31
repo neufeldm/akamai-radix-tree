@@ -80,12 +80,12 @@ target_compile_options(test_SimpleTree PRIVATE ${AKAMAI_MAPPER_CXX_WARNING_FLAGS
 target_link_libraries(test_SimpleTree akamai-mapper-radixtree gtest gtest_main pthread)
 add_test(NAME testSimpleTree COMMAND test_SimpleTree)
 
-add_executable(test_CompoundCursor test_CompoundCursor.cc)
+add_executable(test_CompoundCursor test_CompoundCursor.cc RandomUtils.cc)
 target_compile_options(test_CompoundCursor PRIVATE ${AKAMAI_MAPPER_CXX_WARNING_FLAGS})
 target_link_libraries(test_CompoundCursor akamai-mapper-radixtree gtest gtest_main pthread)
 add_test(NAME testCompoundCursor COMMAND test_CompoundCursor)
 
-add_executable(test_CursorIterator test_CursorIterator.cc)
+add_executable(test_CursorIterator test_CursorIterator.cc RandomUtils.cc)
 target_compile_options(test_CursorIterator PRIVATE ${AKAMAI_MAPPER_CXX_WARNING_FLAGS})
 target_link_libraries(test_CursorIterator akamai-mapper-radixtree gtest gtest_main pthread)
 add_test(NAME testCursorIterator COMMAND test_CursorIterator)

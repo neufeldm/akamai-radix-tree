@@ -209,7 +209,6 @@ public:
   using OffsetType = typename BinaryWORMNodeT::OffsetType;
   using HasChild = std::array<bool,2>;
   using ValueType = typename BinaryWORMNodeT::ValueType;
-  using EdgeType = typename BinaryWORMNodeT::EdgeType;
   using Buffer = BufferT;
   using TreeStats = TreeNodeStats<BinaryWORMNodeT>;
 
@@ -228,7 +227,7 @@ public:
    * \brief Provide a buffer manager as well as an optional value writer.
    */
   BinaryWORMTreeBuilder(Buffer&& mb,bool rejectEmptyLeaf = false,const WriteValueType& wv = WriteValueType{})
-    : rejectEmptyLeaf_(rejectEmptyLeaf), buffer_(std::move<Buffer>(mb)), writeValue_(wv) {}
+    : rejectEmptyLeaf_(rejectEmptyLeaf), buffer_(std::move(mb)), writeValue_(wv) {}
 
   virtual ~BinaryWORMTreeBuilder() = default;
   
@@ -541,22 +540,22 @@ BinaryWORMTreeBuilder<BufferT,PathT,BinaryWORMNodeT>::buildHeadersFromConnecting
   // We get the first step in the path as part of the tree node topology,
   // so start at offset 1 in the path.
   for (std::size_t i=1;i<connectingPath.size();++i) {
-    if (connectingNodes.back().edge().full()) {
+    if (connectingNodes.back().edgeFull()) {
       // If our edge is full then absorb the current connecting
       // step into our child and add a new node in the chain.
       connectingNodes.back().setHasChild(connectingPath.at(i),true);
       connectingNodes.emplace_back();
     } else {
       // If we have room in our edge then keep adding to it.
-      connectingNodes.back().edge().push_back(connectingPath.at(i));
+      connectingNodes.back().edgePushBack(connectingPath.at(i));
     }
   }
   // Now configure our final node in the chain to match the children/value status
   // of what was passed in, keeping the edge we computed to get us to the
   // right place in the tree.
-  EdgeType backEdge = connectingNodes.back().edge();
+  BinaryWORMNodeType oldBackNode = connectingNodes.back();
   connectingNodes.back() = newNode;
-  connectingNodes.back().edge() = backEdge;
+  connectingNodes.back().copyEdgeFrom(oldBackNode);
   return connectingNodes;
 }
 

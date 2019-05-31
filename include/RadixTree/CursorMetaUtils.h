@@ -53,6 +53,15 @@ struct CursorAtNode {
 };
 
 /**
+ * \brief Call atLeafNode() on the cursor passed in.
+ */
+struct CursorAtLeafNode {
+  template <typename T>
+  bool operator()(const T& cursor) { return cursor.atLeafNode(); }
+};
+
+
+/**
  * \brief Call atValue() on the cursor passed in.
  */
 struct CursorAtValue {

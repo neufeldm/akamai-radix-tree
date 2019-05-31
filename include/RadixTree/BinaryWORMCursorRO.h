@@ -52,6 +52,7 @@ public:
 
   PathType getPath() const { return curPath_; }
   bool atNode() const { return (nodeStack_.back().depthBelow == 0); }
+  bool atLeafNode() const { return atNode() && backNode().isLeaf(); }
   bool atValue() const { return (atNode() && backNode().hasValue()); }
   inline bool goChild(std::size_t child);
   bool canGoChild(std::size_t /* child */) const { return (curPath_.size() != MaxDepth); }
@@ -137,7 +138,7 @@ public:
   bool canGoChildNode(std::size_t child) const {
     if (depthBelow_ == 0) { return (coveringNode().getChild(child) != nullptr); }
     if (nodeBelow_ == nullptr) { return false; }
-    return (edgeToBelow_.at(0) == child);
+    return (firstEdgeStep() == child);
   }
   bool hasChildNode(std::size_t child) const { return canGoChildNode(child); }
  
@@ -147,6 +148,8 @@ public:
   inline NodeValue coveringNodeValueRO() const;
   inline NodeValue nodeValue() const;
   NodeValue nodeValueRO() const { return nodeValue(); }
+
+  bool atLeafNode() const { return (atNode() && !(hasChildNode(0) || hasChildNode(1))); }
 
 private:
   using Node = BinaryWORMNodeType;

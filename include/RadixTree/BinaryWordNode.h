@@ -123,6 +123,8 @@ public:
   Edge& edge() { return ext_; }
   const Edge& edge() const { return ext_; }
 
+  bool isLeaf() const { return !(hasChild(0) || hasChild(1)); }
+
 protected:
   WordType* chunk() const { return alloc_->getPtr(nodeRef_); }
 

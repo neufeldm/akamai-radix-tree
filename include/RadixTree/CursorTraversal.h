@@ -34,6 +34,9 @@ SOFTWARE.
  * allows you to make the traversal "right to left" instead of "left to right".
  * That is, if ReverseChildren is true instead of starting at child 0 and incrementing
  * to child R - 1 the traversal will start at child R - 1 and decrement through child 0.
+ * The "CallAtAllNodes" template argument will call the callback function at every node
+ * in the tree, not just every node with a value. This is useful if you need to examine
+ * the underlying structure of the tree and not just its values.
  * 
  * We implement four basic traversal types: pre-order, post-order, in-order, and pre/post-order.
  * Pre/Post/In are as canonically defined. In-order traversals may only be performed on a tree
@@ -69,7 +72,7 @@ namespace RadixTree {
  * 
  * The callback will get passed all of the cursor values as arguments.
  */
-template <bool ReverseChildren = false,typename Callback,typename... Cursors>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename... Cursors>
 inline void preOrderWalk(Callback&& cb,Cursors&&... c);
 
 /**
@@ -77,7 +80,7 @@ inline void preOrderWalk(Callback&& cb,Cursors&&... c);
  * 
  * The callback will get passed all of the cursor values as arguments.
  */
-template <bool ReverseChildren = false,typename Callback,typename... Cursors>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename... Cursors>
 inline void postOrderWalk(Callback&& cb,Cursors&&... c);
 
 /**
@@ -85,7 +88,7 @@ inline void postOrderWalk(Callback&& cb,Cursors&&... c);
  * Only valid for cursors with an even radix value.
  * The callback will get passed all of the cursor values as arguments.
  */
-template <bool ReverseChildren = false,typename Callback,typename... Cursors>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename... Cursors>
 inline void inOrderWalk(Callback&& cb,Cursors&&... c);
 
 /**
@@ -94,70 +97,70 @@ inline void inOrderWalk(Callback&& cb,Cursors&&... c);
  * to be used on the way "up" during the post-order traversal.
  * The callback will get passed all of the cursor values as arguments.
  */
-template <bool ReverseChildren = false,typename PreCallback,typename PostCallback,typename... Cursors>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename PreCallback,typename PostCallback,typename... Cursors>
 inline void prePostOrderWalk(PreCallback&& precb,PostCallback&& postcb,Cursors&&... c);
 
 /**
  * @see preOrderWalk, definitions of "follow"
  */
-template <bool ReverseChildren = false,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename Follower,typename... Leaders>
 inline void preOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l);
 
 /**
  * @see postOrderWalk, definitions of "follow"
  */
-template <bool ReverseChildren = false,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename Follower,typename... Leaders>
 inline void postOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l);
 
 /**
  * @see inOrderWalk, definitions of "follow"
  */
-template <bool ReverseChildren = false,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename Follower,typename... Leaders>
 inline void inOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l);
 
 /**
  * @see prePostOrderWalk, definitions of "follow"
  */
-template <bool ReverseChildren = false,typename PreCallback,typename PostCallback,typename Follower,typename... Leaders>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename PreCallback,typename PostCallback,typename Follower,typename... Leaders>
 inline void prePostOrderFollow(PreCallback&& precb,PostCallback&& postcb,Follower&& f,Leaders&&... l);
 
 /**
  * @see preOrderWalk, definitions of "follow over"
  */
-template <bool ReverseChildren = false,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename Follower,typename... Leaders>
 inline void preOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l);
 
 /**
  * @see postOrderWalk, definitions of "follow over"
  */
-template <bool ReverseChildren = false,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename Follower,typename... Leaders>
 inline void postOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l);
 
 /**
  * @see inOrderWalk, definitions of "follow over"
  */
-template <bool ReverseChildren = false,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename Callback,typename Follower,typename... Leaders>
 inline void inOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l);
 
 /**
  * @see prePostOrderWalk, definitions of "follow over"
  */
-template <bool ReverseChildren = false,typename PreCallback,typename PostCallback,typename Follower,typename... Leaders>
+template <bool ReverseChildren = false,bool CallAtAllNodes = false,typename PreCallback,typename PostCallback,typename Follower,typename... Leaders>
 inline void prePostOrderFollowOver(PreCallback&& precb,PostCallback&& postcb,Follower&& f,Leaders&&... l);
 
 /////////////////////
 // IMPLEMENTATIONS //
 /////////////////////
 
-template <bool ReverseChildren,typename Callback,typename Cursor>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename Cursor>
 void preOrderWalk(Callback&& cb,Cursor&& c) {
   constexpr std::size_t Radix = std::decay<Cursor>::type::Radix;
-  if (c.atValue()) { cb(std::forward<Cursor>(c)); }
+  if (c.atValue() || (CallAtAllNodes && c.atNode())) { cb(std::forward<Cursor>(c)); }
   if (ReverseChildren) {
     for (std::size_t i = Radix; i != 0; --i) {
       if (c.canGoChildNode(i-1)) {
         c.goChild(i-1);
-        preOrderWalk<ReverseChildren>(std::forward<Callback>(cb),std::forward<Cursor>(c));
+        preOrderWalk<ReverseChildren,CallAtAllNodes>(std::forward<Callback>(cb),std::forward<Cursor>(c));
         c.goParent();
       }
     }
@@ -165,14 +168,14 @@ void preOrderWalk(Callback&& cb,Cursor&& c) {
     for (std::size_t i = 0; i < Radix; ++i) {
       if (c.canGoChildNode(i)) {
         c.goChild(i);
-        preOrderWalk<ReverseChildren>(std::forward<Callback>(cb),std::forward<Cursor>(c));
+        preOrderWalk<ReverseChildren,CallAtAllNodes>(std::forward<Callback>(cb),std::forward<Cursor>(c));
         c.goParent(); 
       }
     }
   }
 }
 
-template <bool ReverseChildren,typename Callback,typename... Cursors>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename... Cursors>
 void preOrderWalk(Callback&& cb,Cursors&&... c) {
   auto cc = make_compound_cursor_ro(std::forward<Cursors>(c)...);
   auto cbPtr = &cb;
@@ -180,18 +183,18 @@ void preOrderWalk(Callback&& cb,Cursors&&... c) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  preOrderWalk<ReverseChildren>(newCB,cc);
+  preOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
 
 
-template <bool ReverseChildren,typename Callback,typename Cursor>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename Cursor>
 void postOrderWalk(Callback&& cb,Cursor&& c) {
   constexpr std::size_t Radix = std::decay<Cursor>::type::Radix;
   if (ReverseChildren) {
     for (std::size_t i = Radix; i != 0; --i) {
       if (c.canGoChildNode(i-1)) {
         c.goChild(i-1);
-        postOrderWalk<ReverseChildren>(std::forward<Callback>(cb),std::forward<Cursor>(c));
+        postOrderWalk<ReverseChildren,CallAtAllNodes>(std::forward<Callback>(cb),std::forward<Cursor>(c));
         c.goParent();
       }
     }
@@ -199,14 +202,14 @@ void postOrderWalk(Callback&& cb,Cursor&& c) {
     for (std::size_t i = 0; i<Radix; ++i) {
       if (c.canGoChildNode(i)) {
         c.goChild(i);
-        postOrderWalk<ReverseChildren>(std::forward<Callback>(cb),std::forward<Cursor>(c));
+        postOrderWalk<ReverseChildren,CallAtAllNodes>(std::forward<Callback>(cb),std::forward<Cursor>(c));
         c.goParent();
       }
     }
   }
-  if (c.atValue()) { cb(std::forward<Cursor>(c)); }
+  if (c.atValue() || (CallAtAllNodes && c.atNode())) { cb(std::forward<Cursor>(c)); }
 }
-template <bool ReverseChildren, typename Callback,typename... Cursors>
+template <bool ReverseChildren, bool CallAtAllNodes, typename Callback,typename... Cursors>
 void postOrderWalk(Callback&& cb,Cursors&&... c) {
   auto cc = make_compound_cursor_ro(std::forward<Cursors>(c)...);
   auto cbPtr = &cb;
@@ -214,11 +217,11 @@ void postOrderWalk(Callback&& cb,Cursors&&... c) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  postOrderWalk<ReverseChildren>(newCB,cc);
+  postOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
 
 
-template <bool ReverseChildren=false, typename Callback,typename Cursor>
+template <bool ReverseChildren, bool CallAtAllNodes, typename Callback,typename Cursor>
 void inOrderWalk(Callback&& cb,Cursor&& c) {
   constexpr std::size_t Radix = std::decay<Cursor>::type::Radix;
   static_assert((Radix % 2) == 0,"Tree degree must be even for in-order traversal.");
@@ -226,23 +229,23 @@ void inOrderWalk(Callback&& cb,Cursor&& c) {
     for (std::size_t i = Radix; i != 0; --i) {
       if (c.canGoChildNode(i-1)) {
         c.goChild(i-1);
-        inOrderWalk<ReverseChildren>(std::forward<Callback>(cb),std::forward<Cursor>(c));
+        inOrderWalk<ReverseChildren,CallAtAllNodes>(std::forward<Callback>(cb),std::forward<Cursor>(c));
         c.goParent();
       }
-      if ((i == ((Radix/2) + 1)) && c.atValue()) { cb(std::forward<Cursor>(c)); }
+      if ((i == ((Radix/2) + 1)) && (c.atValue() || (CallAtAllNodes && c.atNode()))) { cb(std::forward<Cursor>(c)); }
     }
   } else {
     for (std::size_t i = 0; i<Radix; ++i) {
       if (c.canGoChildNode(i)) {
         c.goChild(i);
-        inOrderWalk<ReverseChildren>(std::forward<Callback>(cb),std::forward<Cursor>(c));
+        inOrderWalk<ReverseChildren,CallAtAllNodes>(std::forward<Callback>(cb),std::forward<Cursor>(c));
         c.goParent();
       }
-      if ((i == ((Radix/2) - 1)) && c.atValue()) { cb(std::forward<Cursor>(c)); }
+      if ((i == ((Radix/2) - 1)) && (c.atValue() || (CallAtAllNodes && c.atNode()))) { cb(std::forward<Cursor>(c)); }
     }
   }
 }
-template <bool ReverseChildren,typename Callback,typename... Cursors>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename... Cursors>
 void inOrderWalk(Callback&& cb,Cursors&&... c) {
   auto cc = make_compound_cursor_ro(std::forward<Cursors>(c)...);
   auto cbPtr = &cb;
@@ -250,18 +253,18 @@ void inOrderWalk(Callback&& cb,Cursors&&... c) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  inOrderWalk<ReverseChildren>(newCB,cc);
+  inOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
 
-template <bool ReverseChildren,typename PreCallback,typename PostCallback,typename Cursor>
+template <bool ReverseChildren,bool CallAtAllNodes,typename PreCallback,typename PostCallback,typename Cursor>
 void prePostOrderWalk(PreCallback&& precb,PostCallback&& postcb,Cursor&& c) {
   constexpr std::size_t Radix = std::decay<Cursor>::type::Radix;
-  if (c.atValue()) { precb(std::forward<Cursor>(c)); }
+  if (c.atValue() || (CallAtAllNodes && c.atNode())) { precb(std::forward<Cursor>(c)); }
   if (ReverseChildren) {
     for (std::size_t i = Radix; i != 0; --i) {
       if (c.canGoChildNode(i-1)) {
         c.goChild(i-1);
-        prePostOrderWalk<ReverseChildren>(std::forward<PreCallback>(precb),std::forward<PostCallback>(postcb),std::forward<Cursor>(c));
+        prePostOrderWalk<ReverseChildren,CallAtAllNodes>(std::forward<PreCallback>(precb),std::forward<PostCallback>(postcb),std::forward<Cursor>(c));
         c.goParent();
       }
     }
@@ -269,15 +272,15 @@ void prePostOrderWalk(PreCallback&& precb,PostCallback&& postcb,Cursor&& c) {
     for (std::size_t i = 0; i<Radix; ++i) {
       if (c.canGoChildNode(i)) {
         c.goChild(i);
-        prePostOrderWalk<ReverseChildren>(std::forward<PreCallback>(precb), std::forward<PostCallback>(postcb), std::forward<Cursor>(c));
+        prePostOrderWalk<ReverseChildren,CallAtAllNodes>(std::forward<PreCallback>(precb), std::forward<PostCallback>(postcb), std::forward<Cursor>(c));
         c.goParent();
       }
     }
   }
-  if (c.atValue()) { postcb(std::forward<Cursor>(c)); }
+  if (c.atValue() || (CallAtAllNodes && c.atNode())) { postcb(std::forward<Cursor>(c)); }
 }
 
-template <bool ReverseChildren, typename PreCallback,typename PostCallback,typename... Cursors>
+template <bool ReverseChildren, bool CallAtAllNodes, typename PreCallback,typename PostCallback,typename... Cursors>
 void prePostOrderWalk(PreCallback&& precb,PostCallback&& postcb,Cursors&&... c) {
   auto cc = make_compound_cursor_ro(std::forward<Cursors>(c)...);
   auto preCBPtr = &precb;
@@ -290,12 +293,12 @@ void prePostOrderWalk(PreCallback&& precb,PostCallback&& postcb,Cursors&&... c) 
     [postCBPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<PostCallback>(*postCBPtr),cbc.allCursors());
     };
-  prePostOrderWalk<ReverseChildren>(newPreCB,newPostCB,cc);
+  prePostOrderWalk<ReverseChildren,CallAtAllNodes>(newPreCB,newPostCB,cc);
 }
 
 
 // traverse leader pre-order, follower traces the same path, callback whenever leader is at a value
-template <bool ReverseChildren,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename Follower,typename... Leaders>
 void preOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l) {
   auto cc = make_compound_follow_cursor_ro(std::forward<Follower>(f),std::forward<Leaders>(l)...);
   auto cbPtr = &cb;
@@ -303,10 +306,10 @@ void preOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  preOrderWalk<ReverseChildren>(newCB,cc);
+  preOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
 
-template <bool ReverseChildren,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename Follower,typename... Leaders>
 void postOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l) {
   auto cc = make_compound_follow_cursor_ro(std::forward<Follower>(f),std::forward<Leaders>(l)...);
   auto cbPtr = &cb;
@@ -314,9 +317,9 @@ void postOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  postOrderWalk<ReverseChildren>(newCB,cc);
+  postOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
-template <bool ReverseChildren,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename Follower,typename... Leaders>
 void inOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l) {
   auto cc = make_compound_follow_cursor_ro(std::forward<Follower>(f),std::forward<Leaders>(l)...);
   auto cbPtr = &cb;
@@ -324,9 +327,9 @@ void inOrderFollow(Callback&& cb,Follower&& f,Leaders&&... l) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  inOrderWalk<ReverseChildren>(newCB,cc);
+  inOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
-template <bool ReverseChildren,typename PreCallback,typename PostCallback,typename Follower,typename... Leaders>
+template <bool ReverseChildren,bool CallAtAllNodes,typename PreCallback,typename PostCallback,typename Follower,typename... Leaders>
 void prePostOrderFollow(PreCallback&& precb,PostCallback&& postcb,Follower&& f,Leaders&&... l) {
   auto cc = make_compound_follow_cursor_ro(std::forward<Follower>(f),std::forward<Leaders>(l)...);
   auto preCBPtr = &precb;
@@ -339,11 +342,11 @@ void prePostOrderFollow(PreCallback&& precb,PostCallback&& postcb,Follower&& f,L
     [postCBPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<PostCallback>(*postCBPtr),cbc.allCursors());
     };
-  prePostOrderWalk<ReverseChildren>(newPreCB,newPostCB,cc);
+  prePostOrderWalk<ReverseChildren,CallAtAllNodes>(newPreCB,newPostCB,cc);
 }
 
   // traverse leader pre-order, follower traces the same path, callback whenever either leader or follower is at a value
-template <bool ReverseChildren, typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren, bool CallAtAllNodes,typename Callback,typename Follower,typename... Leaders>
 void preOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l) {
   auto cc = make_compound_follow_over_cursor_ro(std::forward<Follower>(f),std::forward<Leaders>(l)...);
   auto cbPtr = &cb;
@@ -351,10 +354,10 @@ void preOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  preOrderWalk<ReverseChildren>(newCB,cc);
+  preOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
 
-template <bool ReverseChildren,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename Follower,typename... Leaders>
 void postOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l) {
   auto cc = make_compound_follow_over_cursor_ro(std::forward<Follower>(f),std::forward<Leaders>(l)...);
   auto cbPtr = &cb;
@@ -362,9 +365,9 @@ void postOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  postOrderWalk<ReverseChildren>(newCB,cc);
+  postOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
-template <bool ReverseChildren,typename Callback,typename Follower,typename... Leaders>
+template <bool ReverseChildren,bool CallAtAllNodes,typename Callback,typename Follower,typename... Leaders>
 void inOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l) {
   auto cc = make_compound_follow_over_cursor_ro(std::forward<Follower>(f),std::forward<Leaders>(l)...);
   auto cbPtr = &cb;
@@ -372,9 +375,9 @@ void inOrderFollowOver(Callback&& cb,Follower&& f,Leaders&&... l) {
     [cbPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<Callback>(*cbPtr),cbc.allCursors());
     };
-  inOrderWalk<ReverseChildren>(newCB,cc);
+  inOrderWalk<ReverseChildren,CallAtAllNodes>(newCB,cc);
 }
-template <bool ReverseChildren,typename PreCallback,typename PostCallback,typename Follower,typename... Leaders>
+template <bool ReverseChildren,bool CallAtAllNodes,typename PreCallback,typename PostCallback,typename Follower,typename... Leaders>
 void prePostOrderFollowOver(PreCallback&& precb,PostCallback&& postcb,Follower&& f,Leaders&&... l) {
   auto cc = make_compound_follow_over_cursor_ro(std::forward<Follower>(f),std::forward<Leaders>(l)...);
   auto preCBPtr = &precb;
@@ -387,7 +390,7 @@ void prePostOrderFollowOver(PreCallback&& precb,PostCallback&& postcb,Follower&&
     [postCBPtr](decltype(cc)& cbc) {
       callOnAllTuple(std::forward<PostCallback>(*postCBPtr),cbc.allCursors());
     };
-  prePostOrderWalk<ReverseChildren>(newPreCB,newPostCB,cc);
+  prePostOrderWalk<ReverseChildren,CallAtAllNodes>(newPreCB,newPostCB,cc);
 }
 
 } // namespace RadixTree

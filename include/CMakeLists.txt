@@ -29,6 +29,8 @@ ${CMAKE_CURRENT_LIST_DIR}/RadixTree/BinaryWORMNodeHeader.h
 ${CMAKE_CURRENT_LIST_DIR}/RadixTree/BinaryWORMNodeHeaderBytes.h
 ${CMAKE_CURRENT_LIST_DIR}/RadixTree/BinaryWORMTree.h
 ${CMAKE_CURRENT_LIST_DIR}/RadixTree/BinaryWORMTreeBuilder.h
+${CMAKE_CURRENT_LIST_DIR}/RadixTree/BinaryWORMTreeGeneric.h
+${CMAKE_CURRENT_LIST_DIR}/RadixTree/BinaryWORMTreeUInt.h
 ${CMAKE_CURRENT_LIST_DIR}/RadixTree/BitPacking.h
 ${CMAKE_CURRENT_LIST_DIR}/RadixTree/CompoundCursor.h
 ${CMAKE_CURRENT_LIST_DIR}/RadixTree/Cursor.h

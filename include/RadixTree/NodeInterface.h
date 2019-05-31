@@ -144,6 +144,11 @@ public:
    */
   bool hasChild(std::size_t c) const { return nodeImplPtr()->hasChild(c); }
 
+  /**
+   * \brief Return true if the node is a leaf, i.e. has no children.
+   */
+  bool isLeaf() const { return nodeImplPtr()->isLeaf(); }
+
 private:
   const NodeImplType* nodeImplPtr() const { return alloc_->getPtr(nodeImplRef_); }
   NodeImplType* nodeImplPtr() { return alloc_->getPtr(nodeImplRef_); }

@@ -95,6 +95,7 @@ struct BinaryWORMNodeUIntOps {
 template <std::size_t OFFSETSIZE,bool LITTLEENDIAN>
 struct BinaryWORMNodeHeaderBytes {
   static constexpr std::size_t OffsetSize = OFFSETSIZE;
+  static constexpr std::size_t MaxHeaderSize = (1 + OffsetSize);
   static_assert((OffsetSize <= 8) && (OffsetSize > 0),"Offset size must be > 0 bytes and <= 8");
   static constexpr bool LittleEndian = LITTLEENDIAN;
   static constexpr bool BigEndian = !LITTLEENDIAN;
@@ -131,6 +132,8 @@ struct BinaryWORMNodeHeaderBytes {
   static constexpr uint8_t ONE = 0x1;
   static constexpr std::size_t EDGE_STEPCOUNT = 3;
   static constexpr uint8_t EDGE_MASK = ((ONE << EDGE_STEPCOUNT) - 1);
+  static constexpr uint8_t MASK_ALL_EDGE_IN = (MASK_STEPCOUNT | EDGE_MASK);
+  static constexpr uint8_t MASK_ALL_EDGE_OUT = ~MASK_ALL_EDGE_IN;
   static std::size_t EDGE_SHIFT(std::size_t es) { return (EDGE_STEPCOUNT - es - 1); }
   static std::size_t edgeStepAt(const uint8_t* b,std::size_t es) { return ((*b >> EDGE_SHIFT(es)) & 0x1); }
   static void setEdgeStepAt(uint8_t* b,std::size_t es,std::size_t sv) {
@@ -141,7 +144,7 @@ struct BinaryWORMNodeHeaderBytes {
     return ((*b & EDGE_MASK) << (8 - EDGE_STEPCOUNT));
   }
   static std::size_t headerSize(const uint8_t* b) { return headerSize(hasChild(b,1) && hasChild(b,0)); }
-  static std::size_t headerSize(bool hasRightChild) { return (1 + (hasRightChild ? OffsetSize : 0)); } 
+  static std::size_t headerSize(bool hasBothChildren) { return (1 + (hasBothChildren ? OffsetSize : 0)); }
 };
 
 } // namespace RadixTree
