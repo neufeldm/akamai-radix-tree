@@ -153,6 +153,8 @@ public:
 
   virtual CursorROType walkCursorRO() const = 0;
   virtual LookupCursorROType lookupCursorRO() const = 0;
+  virtual const uint8_t* bytes() const = 0;
+  virtual std::size_t bytesSize() const = 0;
 };
 
 template <typename PathT,typename ValueT>
@@ -175,6 +177,9 @@ public:
   CursorROType cursorRO() const { return walkCursorRO(); }
   CursorROType walkCursorRO() const { return treeImpl_->walkCursorRO(); }
   LookupCursorROType lookupCursorRO() const { return treeImpl_->lookupCursorRO(); }
+
+  const uint8_t* bytes() const { return treeImpl_->bytes(); }
+  std::size_t bytesSize() const { return treeImpl_->bytesSize(); }
 
 private:
   std::shared_ptr<TreeImplType> treeImpl_{};

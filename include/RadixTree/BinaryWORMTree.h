@@ -79,11 +79,15 @@ using BinaryWORMTreeVector = BinaryWORMTree<std::vector<uint8_t>,PathT,BinaryWOR
 /**
  * \brief Wraps a uint8_t* pointer for use by a WORM tree, no ownership implied.
  */
-struct UnownedBufferRO {
-  const uint8_t* buffer{nullptr};
-  const uint8_t* data() const { return buffer; }
+class UnownedBufferRO {
+public:
+  const uint8_t* data() const { return buffer_; }
+  std::size_t size() const { return size_; }
   UnownedBufferRO() = default;
-  UnownedBufferRO(const uint8_t* b) : buffer(b) {};
+  UnownedBufferRO(const uint8_t* b,std::size_t s) : buffer_(b), size_(s) {};
+private:
+  const uint8_t* buffer_{nullptr};
+  std::size_t size_{0};
 };
 
 /**
@@ -97,6 +101,7 @@ struct SharedBufferOwnerRO {
   template <typename... ConstructorArgs>
   SharedBufferOwnerRO(ConstructorArgs... cArgs) : buffer(std::make_shared<T>(std::forward<ConstructorArgs>(cArgs)...)) {}
   const uint8_t* data() const { return buffer->data(); }
+  std::size_t size() const { return buffer->size(); }
 };
 
 /**
@@ -105,19 +110,32 @@ struct SharedBufferOwnerRO {
 class MallocBufferManagerRO {
 public:
   MallocBufferManagerRO() = default;
-  MallocBufferManagerRO(uint8_t* b) : buffer_(b) {}
+  MallocBufferManagerRO(uint8_t* b,std::size_t s) : buffer_(b), size_(s) {}
   MallocBufferManagerRO(const MallocBufferManagerRO& o) = delete;
-  MallocBufferManagerRO(MallocBufferManagerRO&& o) : buffer_(o.buffer_) { free(o.buffer_); o.buffer_ = nullptr; }
+  MallocBufferManagerRO(MallocBufferManagerRO&& o) : buffer_(o.buffer_), size_(o.size_) { free(o.buffer_); o.buffer_ = nullptr; o.size_ = 0; }
   MallocBufferManagerRO& operator=(const MallocBufferManagerRO& o) = delete;
-  MallocBufferManagerRO& operator=(MallocBufferManagerRO&& o) { free(buffer_); buffer_ = nullptr; std::swap(buffer_,o.buffer_); return *this; }
-  virtual ~MallocBufferManagerRO() { free(buffer_); buffer_ = nullptr; }
+  MallocBufferManagerRO& operator=(MallocBufferManagerRO&& o) { free(buffer_); buffer_ = nullptr; size_ = 0; std::swap(buffer_,o.buffer_); std::swap(size_,o.size_); return *this; }
+  virtual ~MallocBufferManagerRO() { free(buffer_); buffer_ = nullptr; size_ = 0; }
   uint8_t* data() { return buffer_; }
   const uint8_t* data() const { return buffer_; }
-  void insertBuffer(uint8_t* b) { free(buffer_); buffer_ = b; }
+  void resize(std::size_t newSize) {
+    void* newBuffer{nullptr};
+    if (newSize == 0) { free(buffer_); }
+    else { newBuffer = realloc(buffer_,newSize); }
+    if ((newBuffer == nullptr) && (newSize != 0)) {
+      throw std::bad_alloc();
+    } else {
+      buffer_ = reinterpret_cast<uint8_t*>(newBuffer);
+      size_ = newSize;
+    }
+  }
+  std::size_t size() const { return size_; }
+  void insertBuffer(uint8_t* b,std::size_t s) { free(buffer_); buffer_ = b; size_ = s; }
   uint8_t* extractBuffer() { uint8_t* b{nullptr}; std::swap(b,buffer_); return b; }
 
 private:
   uint8_t* buffer_{nullptr};
+  std::size_t size_{0};
 };
 
 

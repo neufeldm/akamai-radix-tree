@@ -175,19 +175,45 @@ public:
     std::unique_ptr<ActualLookupCursorImpl> lookupCursorImpl(new ActualLookupCursorImpl(actualTree_.lookupCursorRO()));
     return LookupCursorROType(std::move(lookupCursorImpl));
   }
+
+  virtual const uint8_t* bytes() const override {
+    return actualTree_.buffer().data();
+  }
+
+  virtual std::size_t bytesSize() const override {
+    return actualTree_.buffer().size();
+  }
 private:
   ActualImpl actualTree_{};
 };
 
+/**
+ * \brief Pre-order traverse cursor doing a dry-run WORM tree build to find minimum offset and value sizes.
+ *
+ * The cursor should cover a tree that contains unsinged integers, uint64_t or smaller.
+ * The tree parameters derived here can be fed directly into buildWORMTreeUIntGeneric
+ * to create a treee.
+ */
 template <typename CursorT>
 inline
 BinaryWORMTreeUIntParams
 findMinimumWORMTreeUIntParameters(const CursorT& c);
 
+/**
+ * \brief Pre-order traverse cursor, build a WORM tree using endian/value/offset sizes in treeParams.
+ */
 template <typename CursorT,typename BufferT = std::vector<uint8_t>>
 inline
 BinaryWORMTreeUIntGeneric<typename std::decay<CursorT>::type::PathType>
 buildWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,const CursorT& sourceCursor);
+
+/**
+ * \brief Take buffer, create a generic WORM tree using parameters in treeParams.
+ */
+template <typename PathT,typename BufferT>
+inline
+BinaryWORMTreeUIntGeneric<PathT>
+makeWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,BufferT&& buffer);
 
 /////////////////////
 // IMPLEMENTATIONS //
@@ -273,14 +299,14 @@ buildBinaryWORMTreeUIntBuffer(const CursorT& cursor,BufferT&& buffer) {
 }
 
 template <typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE = sizeof(uint64_t),std::size_t VALUESIZE = sizeof(uint64_t)>
-struct MakeBinaryWORMTreeUInt
-  : public MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE - 1>
+struct BuildBinaryWORMTreeUInt
+  : public BuildBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE - 1>
 {
   static_assert(OFFSETSIZE <= sizeof(uint64_t),"OFFSETSIZE > sizeof(uint64_t)");
   static_assert(VALUESIZE <= sizeof(uint64_t),"VALUESIZE > sizeof(uint64_t)");
 
   // basic recursion case that does the work
-  using ParentClass = MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE - 1>;
+  using ParentClass = BuildBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE - 1>;
   template <typename BufferT>
   using TreeImpl = BinaryWORMTreeUIntGenericImpl<BufferT,PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE>;
 
@@ -302,7 +328,7 @@ struct MakeBinaryWORMTreeUInt
 };
 
 template <typename PathT,bool LITTLEENDIAN>
-struct MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,0,sizeof(uint64_t)> {
+struct BuildBinaryWORMTreeUInt<PathT,LITTLEENDIAN,0,sizeof(uint64_t)> {
   // this terminates the template recursion - no need to run through 0 offset size
   template <typename BufferT>
   using TreeImpl = BinaryWORMTreeUIntGenericImpl<BufferT,PathT,LITTLEENDIAN,0,sizeof(uint64_t)>;
@@ -316,10 +342,10 @@ struct MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,0,sizeof(uint64_t)> {
 };
 
 template <typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE>
-struct MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,0>
-  : public MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE - 1,sizeof(uint64_t)>
+struct BuildBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,0>
+  : public BuildBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE - 1,sizeof(uint64_t)>
 {
-  using ParentClass = MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE - 1,sizeof(uint64_t)>;
+  using ParentClass = BuildBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE - 1,sizeof(uint64_t)>;
   // this restarts the inheritance chain at OFFSETSIZE - 1
   template <typename CursorType, typename BufferType>
   static BinaryWORMTreeUIntGeneric<PathT>
@@ -328,31 +354,91 @@ struct MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,0>
   }
 };
 
-
-template <typename CursorT,typename BufferType = std::vector<uint8_t>>
+template <typename CursorT,typename BufferType>
 BinaryWORMTreeUIntGeneric<typename std::decay<CursorT>::type::PathType>
-buildWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,const CursorT& treeCursor,BufferType&& buffer)
+buildWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,const CursorT& treeCursor)
 {
   static_assert(std::is_unsigned<typename CursorT::ValueType>::value,
                 "buildWORMTreeUIntBuffer: source tree must be of unsigned integer type");
   static_assert(sizeof(typename CursorT::ValueType) <= 8,
                 "buildWORMTreeUIntBuffer: source tree value too large for uint64_t");
   using PathType = typename std::decay<CursorT>::type::PathType;
+  BufferType buffer{};
+  
   if (treeParams.isLittleEndian) {
-    return MakeBinaryWORMTreeUInt<PathType,true>::from(treeParams,treeCursor,std::move(buffer));
+    return BuildBinaryWORMTreeUInt<PathType,true>::from(treeParams,treeCursor,std::move(buffer));
   } else {
-    return MakeBinaryWORMTreeUInt<PathType,false>::from(treeParams,treeCursor,std::move(buffer));
+    return BuildBinaryWORMTreeUInt<PathType,false>::from(treeParams,treeCursor,std::move(buffer));
+  }
+  return BinaryWORMTreeUIntGeneric<PathType>{};
+}
+
+
+template <typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE = sizeof(uint64_t),std::size_t VALUESIZE = sizeof(uint64_t)>
+struct MakeBinaryWORMTreeUInt
+  : public MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE - 1>
+{
+  static_assert(OFFSETSIZE <= sizeof(uint64_t),"OFFSETSIZE > sizeof(uint64_t)");
+  static_assert(VALUESIZE <= sizeof(uint64_t),"VALUESIZE > sizeof(uint64_t)");
+
+  // basic recursion case that does the work
+  using ParentClass = MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE - 1>;
+  template <typename BufferT>
+  using TreeImpl = BinaryWORMTreeUIntGenericImpl<BufferT,PathT,LITTLEENDIAN,OFFSETSIZE,VALUESIZE>;
+
+  template <typename BufferT>
+  static BinaryWORMTreeUIntGeneric<PathT>
+  from(const BinaryWORMTreeUIntParams& treeParams,BufferT&& buffer) {
+    using BufferType = typename std::decay<BufferT>::type;
+    if ((OFFSETSIZE == treeParams.offsetSize) &&
+        (VALUESIZE == treeParams.valueSize) &&
+        (LITTLEENDIAN == treeParams.isLittleEndian))
+    {
+      std::unique_ptr<TreeImpl<BufferType>> treeImpl{new TreeImpl<BufferType>{std::move(buffer)}};
+      return BinaryWORMTreeUIntGeneric<PathT>{treeParams,std::move(treeImpl)};
+    } else {
+      return ParentClass::from(treeParams,std::move(buffer));
+    }
+  }
+};
+
+template <typename PathT,bool LITTLEENDIAN>
+struct MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,0,sizeof(uint64_t)> {
+  // this terminates the template recursion - no need to run through 0 offset size
+  template <typename BufferT>
+  using TreeImpl = BinaryWORMTreeUIntGenericImpl<BufferT,PathT,LITTLEENDIAN,0,sizeof(uint64_t)>;
+  template <typename CursorType, typename BufferT>
+  static BinaryWORMTreeUIntGeneric<PathT>
+  from(const BinaryWORMTreeUIntParams& treeParams,BufferT&&) {
+    throw std::runtime_error("Invalid UInt binary WORM tree params: offsetsize " + std::to_string(treeParams.offsetSize) +
+                             " valuesize " + std::to_string(treeParams.valueSize));
+    return BinaryWORMTreeUIntGeneric<PathT>();
+  }
+};
+
+template <typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE>
+struct MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE,0>
+  : public MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE - 1,sizeof(uint64_t)>
+{
+  using ParentClass = MakeBinaryWORMTreeUInt<PathT,LITTLEENDIAN,OFFSETSIZE - 1,sizeof(uint64_t)>;
+  // this restarts the inheritance chain at OFFSETSIZE - 1
+  template <typename CursorType, typename BufferType>
+  static BinaryWORMTreeUIntGeneric<PathT>
+  from(const BinaryWORMTreeUIntParams& treeParams,BufferType&& buffer) {
+    return ParentClass::from(treeParams,std::move(buffer));
+  }
+};
+
+template <typename PathT,typename BufferT>
+BinaryWORMTreeUIntGeneric<PathT>
+makeWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,BufferT&& buffer) {
+  static_assert(std::is_rvalue_reference<BufferT>::value,"makeWORMTreeUIntGeneric: need rvalue reference to buffer");
+  if (treeParams.isLittleEndian) {
+    return MakeBinaryWORMTreeUInt<PathT,true>::from(treeParams,std::move(buffer));
+  } else {
+    return MakeBinaryWORMTreeUInt<PathT,false>::from(treeParams,std::move(buffer));
   }
 }
-
-template <typename CursorT,typename BufferT>
-BinaryWORMTreeUIntGeneric<typename std::decay<CursorT>::type::PathType>
-buildWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,const CursorT& sourceCursor)
-{
-  BufferT buffer{};
-  return buildWORMTreeUIntGeneric(treeParams,sourceCursor,std::move(buffer));
-}
-
 
 } // namespace RadixTree
 } // namespace Mapper
