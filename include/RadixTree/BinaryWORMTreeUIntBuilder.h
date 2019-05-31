@@ -79,6 +79,12 @@ inline
 BinaryWORMTreeUIntGeneric<PathT>
 makeWORMTreeUIntGeneric(const BinaryWORMTreeUIntParams& treeParams,BufferT&& buffer);
 
+/**
+ * \brief Fully templatized specific UInt WORM tree builder.
+ */
+template <typename BufferT,typename PathT,bool LITTLEENDIAN,std::size_t OFFSETSIZE,std::size_t VALUESIZE>
+using BinaryWORMTreeUIntBuilder = BinaryWORMTreeBuilder<BufferT,PathT,BinaryWORMNodeUIntWO<LITTLEENDIAN,OFFSETSIZE,VALUESIZE>>;
+
 /////////////////////
 // IMPLEMENTATIONS //
 /////////////////////
