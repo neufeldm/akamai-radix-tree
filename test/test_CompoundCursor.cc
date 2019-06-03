@@ -127,6 +127,26 @@ TEST(CompoundCursor, FollowTest) {
   auto compoundFollowOverCursor = make_compound_follow_over_cursor_ro(follower.cursor(),leader1.cursor(),leader2.cursor());
   std::size_t compoundFollowOverSpotCount = countCompoundSpots(compoundFollowOverCursor);
   ASSERT_EQ(followOverSpotCount,compoundFollowOverSpotCount);
+
+  // Check some specific covering node values
+  auto compoundCheckCovering = make_compound_cursor_ro(follower.cursorRO(),leader1.walkCursorRO(),leader2.lookupCursorRO());
+  cursorGoto(compoundCheckCovering,TestPath<2,6>{0,0,0,0});
+  auto allCoveringDepths = compoundCheckCovering.coveringNodeValueDepth();
+  auto allCoveringNodeValues = compoundCheckCovering.coveringNodeValueRO();
+  ASSERT_EQ(std::get<0>(allCoveringDepths),compoundCheckCovering.coveringNodeValueDepth<0>());
+  ASSERT_EQ(std::get<0>(allCoveringDepths),4);
+  ASSERT_EQ(*(compoundCheckCovering.coveringNodeValueRO<0>().getPtrRO()),4);
+  ASSERT_EQ(*(std::get<0>(allCoveringNodeValues).getPtrRO()),4);
+
+  ASSERT_EQ(std::get<1>(allCoveringDepths),compoundCheckCovering.coveringNodeValueDepth<1>());
+  ASSERT_EQ(std::get<1>(allCoveringDepths),0);
+  ASSERT_EQ(compoundCheckCovering.coveringNodeValueRO<1>().getPtrRO(),nullptr);
+  ASSERT_EQ(std::get<1>(allCoveringNodeValues).getPtrRO(),nullptr);
+
+  ASSERT_EQ(std::get<2>(allCoveringDepths),compoundCheckCovering.coveringNodeValueDepth<2>());
+  ASSERT_EQ(std::get<2>(allCoveringDepths),3);
+  ASSERT_EQ(*(compoundCheckCovering.coveringNodeValueRO<2>().getPtrRO()),0);
+  ASSERT_EQ(*(std::get<2>(allCoveringNodeValues).getPtrRO()),0);
 }
 
 int main(int argc, char** argv) {

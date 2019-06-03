@@ -47,9 +47,12 @@ namespace RadixTree {
  * \brief Contains the size/value/endian parameters for a Binary WORM tree.
  */
 struct BinaryWORMTreeUIntParams {
+  bool isLittleEndian{false}; ///< Whether the offset and value are little endian.
   std::size_t offsetSize{0}; ///< Size in bytes of offset unsigned integer.
   std::size_t valueSize{0}; ///< Size in bytes of value unsigned integer.
-  bool isLittleEndian{false}; ///< Whether the offset and value are little endian.
+
+  BinaryWORMTreeUIntParams() = default;
+  BinaryWORMTreeUIntParams(bool end,std::size_t os,std::size_t vs) : isLittleEndian(end), offsetSize(os), valueSize(vs) {}
 };
 
 /**
@@ -118,6 +121,9 @@ public:
   virtual PathType getPath() const override { return actualCursor_.getPath(); }
   virtual ValueType valueCopy() const override { return static_cast<uint64_t>(*(actualCursor_.nodeValueRO().getPtrRO())); }
   virtual GenericImpl* copy() const override { return new BinaryWORMCursorUIntGenericImpl<ActualImplT>(actualCursor_); }
+  virtual ValueType coveringValueCopy() const override { return static_cast<uint64_t>(*(actualCursor_.coveringNodeValueRO().getPtrRO())); }
+  virtual bool hasCoveringValue() const override { return actualCursor_.coveringNodeValueRO().getPtrRO() != nullptr; }
+  virtual std::size_t coveringValueDepth() const override { return actualCursor_.coveringNodeValueDepth(); }
 
   const ActualImplT& actualCursor() const { return actualCursor_; }
   ActualImplT& actualCursor() { return actualCursor_; }

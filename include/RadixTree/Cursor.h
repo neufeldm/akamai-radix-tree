@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <stdint.h>
 #include <limits>
+#include <utility>
 
 #include "NodeValue.h"
 
@@ -143,10 +144,16 @@ public:
   bool canGoParent() const { return (curPath_.size() > 0); }
 
   /**
-   * \brief Return read-only node value of covering node at current position in the path.
-   *  "Covering node" is defined to be the nearest node immediately above current cursor position.
+   * \brief Return read-only node value of covering node of current position in the path.
+   *  "Covering node" is defined to be the nearest node above current cursor position
+   *  that has a value.
    */
-  NodeValue coveringNodeValueRO() const { return NodeValue{coveringValueNode()}; }
+  NodeValueRO coveringNodeValueRO() const { return NodeValueRO{coveringValueNodeAndDepth().first}; }
+
+  /**
+   * \brief Return depth of covering node.
+   */
+  std::size_t coveringNodeValueDepth() const { return coveringValueNodeAndDepth().second; }
 
   /**
    * \brief Return node value if cursor is at a node - empty if cursor is not at a node.
@@ -178,13 +185,14 @@ protected:
   // Keep a stack of nodes around
   NodeStack nodeStack_;
   Node backNode() const { return Node{alloc_,nodeStack_.back().nodeRef}; }
-  Node coveringValueNode() const {
+  std::pair<Node,std::size_t> coveringValueNodeAndDepth() const {
     std::size_t atStack = nodeStack_.size() - 1;
     while (atStack != 0) {
-      Node n{alloc_,nodeStack_[atStack--].nodeRef};
-      if (n.hasValue()) { return n; }      
+      const NodePos& np = nodeStack_[atStack--];
+      Node n{alloc_,np.nodeRef};
+      if (n.hasValue()) { return std::pair<Node,std::size_t>{n,np.depth}; }      
     }
-    return Node{alloc_,nodeStack_[0].nodeRef};
+    return std::pair<Node,std::size_t>{Node{alloc_,nodeStack_[0].nodeRef},0};
   }    
   
   // Keep our current position in the tree

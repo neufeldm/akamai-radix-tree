@@ -61,6 +61,13 @@ public:
     : alloc_(&a)
   {
     NodePos rootPos(root);
+    if (root != Allocator::nullRef) {
+      Node rootNode{alloc_,root};
+      if (rootNode.hasValue()) {
+        rootPos.coveringValueNodeRef = root;
+        rootPos.coveringValueNodeDepth = 0;
+      }
+    }
     nodeStack_.push_back(rootPos);
   }
   WalkCursorRO(const WalkCursorRO& other) = default;
@@ -80,7 +87,11 @@ public:
   inline bool canGoChildNode(std::size_t child) const;
   inline bool goParent();
   bool canGoParent() const { return (curPath_.size() > 0); }
-  NodeValue coveringNodeValueRO() const { return NodeValue{coveringValueNode()}; }
+  NodeValue coveringNodeValueRO() const {
+    if (nodeStack_.back().coveringValueNodeRef == Allocator::nullRef) { return NodeValue{}; }
+    return NodeValue{backValueNode()};
+  }
+  std::size_t coveringNodeValueDepth() const { return nodeStack_.back().coveringValueNodeDepth; }
   NodeValue nodeValue() const { return (atNode() ? NodeValue{backNode()} : NodeValue{}); }
   NodeValue nodeValueRO() const { return nodeValue(); }
 
@@ -97,6 +108,11 @@ private:
     // Reference to node below the current position (if any)
     NodeImplRef nodeRefBelow{Allocator::nullRef};
 
+    // Track the most recent node reference we've seen that
+    // has a value.
+    NodeImplRef coveringValueNodeRef{Allocator::nullRef};
+    std::size_t coveringValueNodeDepth{0};
+
     NodePos() = default;
     NodePos(NodeImplRef nref) : nodeRefAtAbove(nref) {}
   };
@@ -104,7 +120,7 @@ private:
   // Keep a stack of nodes around
   NodeStack nodeStack_{};
   Node backNode() const { return Node{alloc_,nodeStack_.back().nodeRefAtAbove}; }
-  Node coveringValueNode() const { return Node{alloc_,nodeStack_.back().nodeRefAtAbove}; }
+  Node backValueNode() const { return Node{alloc_,nodeStack_.back().coveringValueNodeRef}; }
 
   // Keep our current position in the tree
   PathType curPath_{};
@@ -145,6 +161,11 @@ bool WalkCursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goChild(std::size_t 
     newNodePos.nodeRefAtAbove = newNodePos.nodeRefBelow;
     newNodePos.nodeRefBelow = Allocator::nullRef;
     newNodePos.depthBelow = 0;
+    Node atNode{alloc_,newNodePos.nodeRefAtAbove};
+    if (atNode.hasValue()) {
+      newNodePos.coveringValueNodeRef = newNodePos.nodeRefAtAbove;
+      newNodePos.coveringValueNodeDepth = curPath_.size() + 1;
+    }
   }
   nodeStack_.push_back(std::move(newNodePos));
   curPath_.push_back(child);

@@ -73,6 +73,9 @@ public:
   virtual PathType getPath() const = 0;
 
   virtual ValueType valueCopy() const = 0;
+  virtual bool hasCoveringValue() const = 0;
+  virtual std::size_t coveringValueDepth() const = 0;
+  virtual ValueType coveringValueCopy() const = 0;
 
   virtual BinaryWORMCursorROGenericImpl<PathType,ValueType>* copy() const = 0;
 };
@@ -123,11 +126,21 @@ public:
     else { return NodeValueRO{}; }
   }
   NodeValue nodeValue() const { return nodeValueRO(); }
+  NodeValueRO coveringNodeValueRO() const {
+    if (cursorImpl_->hasCoveringValue()) { return NodeValueRO(cursorImpl_->coveringValueCopy()); }
+    else { return NodeValueRO(); }
+  }
+  std::size_t coveringNodeValueDepth() const { return coveringValueDepth(); }
 
   ValueType valueCopy() const { return cursorImpl_->valueCopy(); }
+  bool hasCoveringValue() const { return cursorImpl_->hasCoveringValue(); }
+  ValueType coveringValueCopy() const { return cursorImpl_->coveringValueCopy(); }
+  std::size_t coveringValueDepth() const { return cursorImpl_->coveringValueDepth(); }
 
   template <typename NewValueType>
   NewValueType valueCopyAs() const { return static_cast<NewValueType>(valueCopy()); }
+  template <typename NewValueType>
+  NewValueType coveringValueCopyAs() const { return static_cast<NewValueType>(coveringValueCopy()); }
 
 private:
   std::unique_ptr<CursorImplType> cursorImpl_{};

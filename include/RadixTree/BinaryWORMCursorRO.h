@@ -48,7 +48,17 @@ public:
   using OffsetType = typename BinaryWORMNodeT::OffsetType;
   using EdgeWordType = typename BinaryWORMNodeT::EdgeWordType;
 
-  BinaryWORMCursorRO(const uint8_t* rootPtr = nullptr) { nodeStack_.push_back(NodePos{rootPtr}); }
+  BinaryWORMCursorRO(const uint8_t* rootPtr = nullptr) {
+    NodePos rootPos{rootPtr};
+    if (rootPtr != nullptr) {
+      BinaryWORMNodeType rootNode{rootPtr};
+      if (rootNode.hasValue()) {
+        rootPos.coveringValueNode = rootPtr;
+        rootPos.coveringValueNodeDepth = 0;
+      }
+    }
+    nodeStack_.push_back(std::move(rootPos));
+  }
 
   PathType getPath() const { return curPath_; }
   bool atNode() const { return (nodeStack_.back().depthBelow == 0); }
@@ -61,13 +71,18 @@ public:
   inline bool goParent();
   bool canGoParent() const { return (curPath_.size() > 0); }
 
-  //NodeValue coveringNodeValueRO() const { return NodeValue{coveringValueNode()}; }
+  NodeValueRO coveringNodeValueRO() const {
+    if (nodeStack_.back().coveringValueNode == nullptr) { return NodeValueRO{}; }
+    ValueType v{};
+    coveringValueNode().readValue(&v);
+    return NodeValueRO{std::move(v)};
+  }
+  std::size_t coveringNodeValueDepth() const { return nodeStack_.back().coveringValueNodeDepth; }
   NodeValueRO nodeValueRO() const {
     if (atValue()) {
       ValueType v{};
       backNode().readValue(&v);
-      NodeValueRO nv{std::move(v)};
-      return nv;
+      return NodeValueRO{std::move(v)};
     }
     return NodeValueRO{};
   }
@@ -96,11 +111,15 @@ private:
     // Reference to node below the current position (if any)
     const uint8_t* nodeBelow{nullptr};
 
+    const uint8_t* coveringValueNode{nullptr};
+    std::size_t coveringValueNodeDepth{0};
+
     NodePos() = default;
     NodePos(const uint8_t* np) : nodeAtAbove(np) {}
   };
   using NodeStack =  NodeStackT<NodePos,MaxDepth+1>;
   BinaryWORMNodeType backNode() const { return BinaryWORMNodeType{nodeStack_.back().nodeAtAbove}; }
+  BinaryWORMNodeType coveringValueNode() const { return BinaryWORMNodeType{nodeStack_.back().coveringValueNode}; }
   // Keep a stack of nodes around
   NodeStack nodeStack_{};
 };
@@ -123,7 +142,15 @@ public:
   using EdgeWordType = typename BinaryWORMNodeT::EdgeWordType;
 
   BinaryWORMLookupCursorRO() = default;
-  BinaryWORMLookupCursorRO(const uint8_t* rootPtr) : nodeAtAbove_(rootPtr) {}
+  BinaryWORMLookupCursorRO(const uint8_t* rootPtr)
+    : nodeAtAbove_(rootPtr)
+  {
+    if (rootPtr == nullptr) { return; }
+    if (BinaryWORMNodeType{rootPtr}.hasValue()) {
+      coveringValueNode_ = rootPtr;
+      coveringValueNodeDepth_ = 0;
+    }
+  }
 
   // Interface methods start here
   
@@ -146,6 +173,7 @@ public:
   bool canGoParent() const { return false; }
 
   inline NodeValue coveringNodeValueRO() const;
+  std::size_t coveringNodeValueDepth() const { return coveringValueNodeDepth_; }
   inline NodeValue nodeValue() const;
   NodeValue nodeValueRO() const { return nodeValue(); }
 
@@ -173,8 +201,10 @@ private:
   const uint8_t* nodeBelow_{nullptr};
   bool edgeEmpty() const { return (edgeStepsRemaining_ == 0); }
   const uint8_t* coveringValueNode_{nullptr};
+  std::size_t coveringValueNodeDepth_{0};
 
   BinaryWORMNodeType coveringNode() const { return BinaryWORMNodeType{nodeAtAbove_}; }
+  BinaryWORMNodeType coveringValueNode() const { return BinaryWORMNodeType{coveringValueNode_}; }
 
   // Keep our current position in the tree
   PathType curPath_;
@@ -216,6 +246,11 @@ bool BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::goChild(std::size_t c
     newNodePos.nodeAtAbove = newNodePos.nodeBelow;
     newNodePos.nodeBelow = nullptr;
     newNodePos.depthBelow = 0;
+    BinaryWORMNodeType atNode{newNodePos.nodeAtAbove};
+    if (atNode.hasValue()) {
+      newNodePos.coveringValueNode = newNodePos.nodeAtAbove;
+      newNodePos.coveringValueNodeDepth = curPath_.size() + 1;
+    }
   }
   nodeStack_.push_back(std::move(newNodePos));
   curPath_.push_back(child);
@@ -271,7 +306,10 @@ bool BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeT>::goChild(std::size_t child)
     nodeBelow_ = nullptr;
     depthBelow_ = 0;
     Node nodeAtAbove{nodeAtAbove_};
-    if (Node{nodeAtAbove_}.hasValue()) { coveringValueNode_ = nodeAtAbove_; }
+    if (Node{nodeAtAbove_}.hasValue()) {
+      coveringValueNode_ = nodeAtAbove_;
+      coveringValueNodeDepth_ = curPath_.size() + 1;
+    }
   }
   curPath_.push_back(child);
   return true;
@@ -280,10 +318,7 @@ bool BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeT>::goChild(std::size_t child)
 template <typename PathT,typename BinaryWORMNodeT>
 typename BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeT>::NodeValue
 BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeT>::coveringNodeValueRO() const {
-  if (coveringValueNode_ == nullptr) {
-    if (Node{nodeAtAbove_}.hasValue()) { coveringValueNode_ = nodeAtAbove_; }
-    else { return NodeValue{}; }
-  }
+  if (coveringValueNode_ == nullptr) { return NodeValue{}; }
   Node coveringValueNode{coveringValueNode_};
   ValueType v{};
   coveringValueNode.readValue(&v);
@@ -294,7 +329,7 @@ template <typename PathT,typename BinaryWORMNodeT>
 typename BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeT>::NodeValue
 BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeT>::nodeValue() const {
   Node nodeAtAbove{nodeAtAbove_};
-  if (nodeAtAbove.hasValue()) {
+  if (nodeAtAbove.hasValue() && (depthBelow_ == 0)) {
     ValueType v{};
     nodeAtAbove.readValue(&v);
     return NodeValueRO{std::move(v)};

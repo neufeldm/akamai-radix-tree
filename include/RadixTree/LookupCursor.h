@@ -61,8 +61,10 @@ public:
   LookupCursorRO(const Allocator& a, NodeImplRef root)
     : alloc_(&a)
     , nodeRefAtAbove_(root)
-    , coveringValue_(Node{&a,root})
-  {}
+  {
+    Node rootNode{&a,root};
+    if (rootNode.hasValue()) { coveringValue_ = NodeValue{rootNode}; }
+  }
   LookupCursorRO(const LookupCursorRO& other) = default;
   LookupCursorRO(LookupCursorRO&& other) = default;
   LookupCursorRO() = delete;
@@ -91,7 +93,8 @@ public:
   bool goParent() { throw std::runtime_error("LookupCursorRO: can't return"); return false; }
   bool canGoParent() const { return false; }
 
-  NodeValue coveringValueRO() const { return coveringValue_; }
+  NodeValue coveringNodeValueRO() const { return coveringValue_; }
+  std::size_t coveringNodeValueDepth() const { return coveringValueDepth_; }
   NodeValue nodeValue() const { return (atNode() ? NodeValue{coveringNode()} : NodeValue{}); }
   NodeValue nodeValueRO() const { return nodeValue(); }
 
@@ -112,6 +115,7 @@ private:
   PathType curPath_;
   // Keep the last actual node value we saw during our descent
   NodeValue coveringValue_{};
+  std::size_t coveringValueDepth_{0};
 
   inline Node getChildNode(std::size_t child) const;
   inline NodeEdge edgeMatch() const;
@@ -240,7 +244,10 @@ bool LookupCursorRO<R,MD,AllocatorT,NodeT,PathT>::goChild(std::size_t child) {
     nodeRefBelow_ = Allocator::nullRef;
     depthBelow_ = 0;
     Node nodeAtAbove{alloc_,nodeRefAtAbove_};
-    if (nodeAtAbove.hasValue()) { coveringValue_ = NodeValue{nodeAtAbove}; }
+    if (nodeAtAbove.hasValue()) {
+      coveringValue_ = NodeValue{nodeAtAbove};
+      coveringValueDepth_ = curPath_.size() + 1;
+    }
   }
   curPath_.push_back(child);
   return true;

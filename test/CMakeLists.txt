@@ -90,6 +90,11 @@ target_compile_options(test_CursorIterator PRIVATE ${AKAMAI_MAPPER_CXX_WARNING_F
 target_link_libraries(test_CursorIterator akamai-mapper-radixtree gtest gtest_main pthread)
 add_test(NAME testCursorIterator COMMAND test_CursorIterator)
 
+add_executable(test_CoveringValue test_CoveringValue)
+target_compile_options(test_CoveringValue PRIVATE ${AKAMAI_MAPPER_CXX_WARNING_FLAGS})
+target_link_libraries(test_CoveringValue akamai-mapper-radixtree gtest gtest_main pthread)
+add_test(NAME testCoveringValue COMMAND test_CoveringValue)
+
 #add_executable(test_RadixTreeFunctions test_RadixTreeFunctions.cc)
 #target_link_libraries(test_RadixTreeFunctions akamai-mapper-radixtree gtest gtest_main pthread)
 #add_test(NAME testRadixTreeFunctions COMMAND test_RadixTreeFunctions)

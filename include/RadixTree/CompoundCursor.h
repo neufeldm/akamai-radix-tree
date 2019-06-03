@@ -42,6 +42,7 @@ namespace RadixTree {
  * The node values and current cursor paths are all presented as tuples of the individual
  * values for each contained cursor.
  */
+
 template <typename... CursorTypes>
 class CompoundCursorRO
 {
@@ -59,11 +60,11 @@ public:
   static constexpr std::size_t Radix = std::tuple_element<0,AllCursors>::type::Radix;
   static constexpr std::size_t MaxDepth = std::tuple_element<0,AllCursors>::type::MaxDepth;
 
-
   using NodeValueRO = std::tuple<typename std::decay<CursorTypes>::type::NodeValueRO...>;
   using NodeValue = NodeValueRO;
   using ValueType = std::tuple<typename std::decay<CursorTypes>::type::ValueType...>;
   using PathType = std::tuple<typename std::decay<CursorTypes>::type::PathType...>;
+  using DepthType = std::tuple<decltype(std::decay<CursorTypes>::type::MaxDepth)...>;
 
   CompoundCursorRO() = delete;
   CompoundCursorRO(const CursorTypes&... cursors) : allCursors_(cursors...) {}
@@ -107,6 +108,11 @@ public:
   template <std::size_t I>
   typename std::tuple_element<I,NodeValueRO>::type
   coveringNodeValueRO() const { return std::get<I>(allCursors_).coveringNodeValueRO(); }
+
+  DepthType coveringNodeValueDepth() const { return callOnEachTupleResult(CursorGetCoveringNodeValueDepth{},allCursors_); }
+  template <std::size_t I>
+  typename std::tuple_element<I,DepthType>::type
+  coveringNodeValueDepth() const { return std::get<I>(allCursors_).coveringNodeValueDepth(); }
 
   NodeValueRO coveringNodeValue() const { return coveringNodeValueRO(); }
   template <std::size_t I>

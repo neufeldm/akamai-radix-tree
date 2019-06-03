@@ -138,6 +138,14 @@ struct CursorGetCoveringNodeValueRO {
 };
 
 /**
+ * \brief Call coveringNodeValueDepth() on the cursor passed in.
+ */
+struct CursorGetCoveringNodeValueDepth {
+  template <typename CursorType>
+  std::size_t operator()(const CursorType& c) { return c.coveringNodeValueDepth(); }
+};
+
+/**
  * \brief Call nodeValue() on the cursor passed in.
  */
 struct CursorGetNodeValue {
