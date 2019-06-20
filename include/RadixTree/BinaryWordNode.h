@@ -26,6 +26,7 @@ SOFTWARE.
 #include <type_traits>
 #include <limits>
 #include <stdint.h>
+#include <array>
 
 #include "BinaryWordEdge.h"
 #include "WordBlockAllocator.h"
@@ -188,6 +189,94 @@ private:
   static constexpr std::size_t ValueWord = 3;
   static constexpr WordType HasValueSet = (static_cast<WordType>(0x1) << (8*sizeof(WordType) - 1));
 };
+
+/**
+ * \brief Binary radix tree node/edge implemented on top of 3 + (data word count) integer words.
+ *
+ * Array word node has a layout like this:
+ * \verbatim
+ * Word 0: metadata
+ *   bit 0 (MSB) - has value
+ *   bits 1 - N: edge size/bits, 0 means no edge
+ *
+ * Word 1: left child ref
+ * Word 2: right child ref
+ * Words 3 - (3 + DataWordCount): value array
+ * \endverbatim
+*/
+template <typename WordType,std::size_t DataWordCount,template <typename,std::size_t> class WordAlloc>
+class BinaryWordArrayNode
+  : public BinaryWordNodeBase<WordType,3 + DataWordCount,1,0,WordAlloc>
+{
+public:
+  using Base = BinaryWordNodeBase<WordType,3 + DataWordCount,1,0,WordAlloc>;
+  using AllocatorType = typename Base::AllocatorType;
+  using NodeImplRefType = typename Base::NodeImplRefType;
+  // Even though the underlying array of words is technically
+  // addressable, we're going to make a copy into a C++
+  // std::array to keep things more type-safe. This does
+  // mean extra copying. If this becomes an issue we could
+  // put together a class that provides an STL-type interface
+  // on top of a WordType pointer.
+  using ValueType = std::array<WordType,DataWordCount>;
+  static constexpr bool ValueIsCopy = true;
+
+  BinaryWordArrayNode() = default;
+  virtual ~BinaryWordArrayNode() = default;
+  explicit BinaryWordArrayNode(const AllocatorType* a,NodeImplRefType n) : Base(a,n) {}
+  BinaryWordArrayNode(const BinaryWordArrayNode& other) : Base(other) {}
+  BinaryWordArrayNode(BinaryWordArrayNode&& other) : Base(std::move(other)) {}
+  BinaryWordArrayNode& operator=(const BinaryWordArrayNode& other) {
+    static_cast<Base&>(*this) = static_cast<const Base&>(other);
+    return *this;
+  }
+  BinaryWordArrayNode& operator=(BinaryWordArrayNode&& other) {
+    static_cast<Base&>(*this) = std::move(static_cast<const Base&>(other));
+    return *this;
+  }
+
+  bool hasValue() const { return (this->exists() && ((this->chunk()[Base::InfoWord] & HasValueSet) != 0)); }
+  void clearValue() { if (this->exists()) { this->chunk()[Base::InfoWord] &= ~HasValueSet; } }
+  void setValue(const ValueType& v) {
+    for (std::size_t i = 0; i < DataWordCount; ++i) { this->chunk()[ValueWord + i] = v[i]; }
+    value_ = v;
+    this->chunk()[Base::InfoWord] |= HasValueSet;
+  }
+
+  ValueType valueCopy() const {
+    // Could use compile-time sequence to generate an array initializer, but
+    // this is simple and does the job.
+    ValueType newValue;
+    for (std::size_t i = 0; i < DataWordCount; ++i) { newValue[i] = this->chunk()[ValueWord + i]; }
+    return newValue;
+  }
+
+  // When getting values we *always* copy - this is a bit wasteful, but
+  // guarantees consistency.
+  const ValueType& value() const {
+    value_ = valueCopy();
+    return value_;
+  }
+  ValueType& value() {
+    value_ = valueCopy();
+    return value_;
+  }
+
+private:
+  static constexpr std::size_t ValueWord = 3;
+  static constexpr WordType HasValueSet = (static_cast<WordType>(0x1) << (8*sizeof(WordType) - 1));
+  /**
+   * \brief The value is technically addressable, but we store a copy anyhow.
+   *
+   * It'd be nice to avoid the copy here, but the interactions between C arrays
+   * and C++ types gets awkward. One alternative would be to implement a wrapper
+   * class that does the equivalent of std::array - provides an STL-compatible
+   * interface - based on an underlying pointer.
+   * Needs to be mutable so we can update a const object with an RO pointer.
+   */
+  mutable ValueType value_{};
+};
+
 
 /**
  * \brief Compact binary word node - only uses 3 words per node instead of 4.
