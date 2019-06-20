@@ -26,6 +26,7 @@ SOFTWARE.
 #include <type_traits>
 #include <limits>
 #include <stdint.h>
+#include <array>
 
 #include "BinaryWordEdge.h"
 #include "WordBlockAllocator.h"
@@ -208,11 +209,17 @@ class BinaryWordArrayNode
   : public BinaryWordNodeBase<WordType,3 + DataWordCount,1,0,WordAlloc>
 {
 public:
-  using Base = BinaryWordNodeBase<WordType,4,1,0,WordAlloc>;
+  using Base = BinaryWordNodeBase<WordType,3 + DataWordCount,1,0,WordAlloc>;
   using AllocatorType = typename Base::AllocatorType;
   using NodeImplRefType = typename Base::NodeImplRefType;
-  using ValueType = WordType*;
-  static constexpr bool ValueIsCopy = false;
+  // Even though the underlying array of words is technically
+  // addressable, we're going to make a copy into a C++
+  // std::array to keep things more type-safe. This does
+  // mean extra copying. If this becomes an issue we could
+  // put together a class that provides an STL-type interface
+  // on top of a WordType pointer.
+  using ValueType = std::array<WordType,DataWordCount>;
+  static constexpr bool ValueIsCopy = true;
 
   BinaryWordArrayNode() = default;
   virtual ~BinaryWordArrayNode() = default;
@@ -230,17 +237,44 @@ public:
 
   bool hasValue() const { return (this->exists() && ((this->chunk()[Base::InfoWord] & HasValueSet) != 0)); }
   void clearValue() { if (this->exists()) { this->chunk()[Base::InfoWord] &= ~HasValueSet; } }
-  void setValue(const ValueType v) {
-    for (std::size_t i = 0; i < DataWordCount; ++i) { this->chunk()[ValueWord + i] = *(v + i); }
+  void setValue(const ValueType& v) {
+    for (std::size_t i = 0; i < DataWordCount; ++i) { this->chunk()[ValueWord + i] = v[i]; }
+    value_ = v;
     this->chunk()[Base::InfoWord] |= HasValueSet;
   }
 
-  const ValueType value() const { return this->chunk() + ValueWord; }
-  ValueType value() { return this->chunk() + ValueWord; }
+  ValueType valueCopy() const {
+    // Could use compile-time sequence to generate an array initializer, but
+    // this is simple and does the job.
+    ValueType newValue;
+    for (std::size_t i = 0; i < DataWordCount; ++i) { newValue[i] = this->chunk()[ValueWord + i]; }
+    return newValue;
+  }
+
+  // When getting values we *always* copy - this is a bit wasteful, but
+  // guarantees consistency.
+  const ValueType& value() const {
+    value_ = valueCopy();
+    return value_;
+  }
+  ValueType& value() {
+    value_ = valueCopy();
+    return value_;
+  }
 
 private:
   static constexpr std::size_t ValueWord = 3;
   static constexpr WordType HasValueSet = (static_cast<WordType>(0x1) << (8*sizeof(WordType) - 1));
+  /**
+   * \brief The value is technically addressable, but we store a copy anyhow.
+   *
+   * It'd be nice to avoid the copy here, but the interactions between C arrays
+   * and C++ types gets awkward. One alternative would be to implement a wrapper
+   * class that does the equivalent of std::array - provides an STL-compatible
+   * interface - based on an underlying pointer.
+   * Needs to be mutable so we can update a const object with an RO pointer.
+   */
+  mutable ValueType value_{};
 };
 
 

@@ -50,6 +50,7 @@ using FourWord64Node = BinaryWordNode<uint64_t,WordBlockVectorAllocator>;
 using ThreeWord64Node = CompactBinaryWordNode<uint32_t,uint64_t,WordBlockVectorAllocator>;
 using ThreeWord32Node = CompactBinaryWordNode<uint16_t,uint32_t,WordBlockVectorAllocator>;
 
+
 template <std::size_t MaxDepth>
 using FourWord32 = RadixTree<BinaryPath<MaxDepth>,FourWord32Node,SimpleFixedDepthStack>;
 
@@ -218,6 +219,100 @@ TEST(CompactBinaryWordTreeVoid32, SimpleTest) {
     ASSERT_TRUE(cursorRO.atNode());
     ASSERT_EQ(boolValues.at(i),cursorRO.atValue());
   }
+}
+
+// Our WordArray node is also special. The automated tests
+// rely on storing a single integer value at various points
+// in the tree, the array isn't strictly compatible with that.
+// Fortunately the only part of the WordArray node that's actually
+// different than the Word node is setting/getting values, so we
+// can rely on the baseline structure testing of the Word node.
+// We'll do some simple spot topology testing like we've done
+// with the void and bool variants to make sure that we're
+// able to get/set values correctly.
+
+template <std::size_t ArrayValueWords>
+using ArrayWord32Node = BinaryWordArrayNode<uint32_t,ArrayValueWords,WordBlockVectorAllocator>;
+
+template <std::size_t ArrayValueWords,std::size_t MaxDepth>
+using ArrayWord32 = RadixTree<BinaryPath<MaxDepth>,ArrayWord32Node<ArrayValueWords>,SimpleFixedDepthStack>;
+
+std::vector<BinaryPath16> wordArrayPaths{{},
+                                         {1,0,0,1,0,0,1},
+                                         {0,1},
+                                         {1,1,1,1,1,1},
+                                         {0,0,0,1,0},
+                                         {1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0}};
+
+// Element 0 of each word array value starts here, we add
+// one for each following array element in sequence.
+std::vector<uint32_t> wordArrayBaseValues{1000,
+                                          2000,
+                                          3000,
+                                          4000,
+                                          5000,
+                                          6000};
+
+template <std::size_t ArrayValueWords>
+std::array<uint32_t,ArrayValueWords>
+getExpectedArrayValue(std::size_t valueIndex) {
+  std::array<uint32_t,ArrayValueWords> v;
+  for (std::size_t i=0;i<ArrayValueWords;++i) { v[i] = wordArrayBaseValues.at(valueIndex) + i; }
+  return v;
+}
+
+template <std::size_t ArrayValueWords>
+std::string
+arrayValueWord32SimpleTest() {
+  ArrayWord32<ArrayValueWords,16> arrayWordTree{};
+  using ValueType = std::array<uint32_t,ArrayValueWords>;
+
+  // First set some values
+  auto cursorRW = arrayWordTree.cursor();
+  for (std::size_t i=0;i<wordArrayPaths.size();++i) {
+    cursorGoto(cursorRW,wordArrayPaths.at(i));
+    ValueType curValue = getExpectedArrayValue<ArrayValueWords>(i);
+    cursorRW.addNode().set(curValue);
+  }
+
+  // Second go back and check them
+  auto cursorRO = arrayWordTree.cursorRO();
+  for (std::size_t i=0;i<wordArrayPaths.size();++i) {
+    cursorGoto(cursorRO,wordArrayPaths.at(i));
+    if (!cursorRO.atValue()) { return "No value at path: " + wordArrayPaths.at(i).toBinaryString(); }
+    ValueType expectedValue = getExpectedArrayValue<ArrayValueWords>(i);
+    ValueType foundValue = *(cursorRO.nodeValueRO().getPtrRO());
+    if (foundValue != expectedValue) {
+      std::string foundValueStr,expectedValueStr;
+      for (std::size_t j=0;j<ArrayValueWords;++j) {
+        foundValueStr += "[" + std::to_string(foundValue.at(j)) + "]";
+        expectedValueStr += "[" + std::to_string(expectedValue.at(j)) + "]";
+      }
+      return ("Value at path " + wordArrayPaths.at(i).toBinaryString() + " " +
+               foundValueStr + " != expected value " + expectedValueStr);
+    }
+  }
+  return "OK";
+}
+
+TEST(WordArrayNode32,SimpleTest) {
+  std::string result;
+  result = arrayValueWord32SimpleTest<1>();
+  ASSERT_EQ(result,"OK");
+  result = arrayValueWord32SimpleTest<2>();
+  ASSERT_EQ(result,"OK");
+  result = arrayValueWord32SimpleTest<3>();
+  ASSERT_EQ(result,"OK");
+  result = arrayValueWord32SimpleTest<4>();
+  ASSERT_EQ(result,"OK");
+  result = arrayValueWord32SimpleTest<5>();
+  ASSERT_EQ(result,"OK");
+  result = arrayValueWord32SimpleTest<6>();
+  ASSERT_EQ(result,"OK");
+  result = arrayValueWord32SimpleTest<7>();
+  ASSERT_EQ(result,"OK");
+  result = arrayValueWord32SimpleTest<8>();
+  ASSERT_EQ(result,"OK");
 }
 
 
