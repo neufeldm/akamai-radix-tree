@@ -190,9 +190,9 @@ private:
 };
 
 /**
- * \brief Binary radix tree node/edge implemented on top of 4 integer words.
+ * \brief Binary radix tree node/edge implemented on top of 3 + (data word count) integer words.
  *
- * Four word node has a layout like this:
+ * Array word node has a layout like this:
  * \verbatim
  * Word 0: metadata
  *   bit 0 (MSB) - has value
@@ -200,7 +200,7 @@ private:
  *
  * Word 1: left child ref
  * Word 2: right child ref
- * Words 3 - (3 + DataWordCount): value
+ * Words 3 - (3 + DataWordCount): value array
  * \endverbatim
 */
 template <typename WordType,std::size_t DataWordCount,template <typename,std::size_t> class WordAlloc>
