@@ -190,6 +190,61 @@ private:
 };
 
 /**
+ * \brief Binary radix tree node/edge implemented on top of 4 integer words.
+ *
+ * Four word node has a layout like this:
+ * \verbatim
+ * Word 0: metadata
+ *   bit 0 (MSB) - has value
+ *   bits 1 - N: edge size/bits, 0 means no edge
+ *
+ * Word 1: left child ref
+ * Word 2: right child ref
+ * Words 3 - (3 + DataWordCount): value
+ * \endverbatim
+*/
+template <typename WordType,std::size_t DataWordCount,template <typename,std::size_t> class WordAlloc>
+class BinaryWordArrayNode
+  : public BinaryWordNodeBase<WordType,3 + DataWordCount,1,0,WordAlloc>
+{
+public:
+  using Base = BinaryWordNodeBase<WordType,4,1,0,WordAlloc>;
+  using AllocatorType = typename Base::AllocatorType;
+  using NodeImplRefType = typename Base::NodeImplRefType;
+  using ValueType = WordType*;
+  static constexpr bool ValueIsCopy = false;
+
+  BinaryWordArrayNode() = default;
+  virtual ~BinaryWordArrayNode() = default;
+  explicit BinaryWordArrayNode(const AllocatorType* a,NodeImplRefType n) : Base(a,n) {}
+  BinaryWordArrayNode(const BinaryWordArrayNode& other) : Base(other) {}
+  BinaryWordArrayNode(BinaryWordArrayNode&& other) : Base(std::move(other)) {}
+  BinaryWordArrayNode& operator=(const BinaryWordArrayNode& other) {
+    static_cast<Base&>(*this) = static_cast<const Base&>(other);
+    return *this;
+  }
+  BinaryWordArrayNode& operator=(BinaryWordArrayNode&& other) {
+    static_cast<Base&>(*this) = std::move(static_cast<const Base&>(other));
+    return *this;
+  }
+
+  bool hasValue() const { return (this->exists() && ((this->chunk()[Base::InfoWord] & HasValueSet) != 0)); }
+  void clearValue() { if (this->exists()) { this->chunk()[Base::InfoWord] &= ~HasValueSet; } }
+  void setValue(const ValueType v) {
+    for (std::size_t i = 0; i < DataWordCount; ++i) { this->chunk()[ValueWord + i] = *(v + i); }
+    this->chunk()[Base::InfoWord] |= HasValueSet;
+  }
+
+  const ValueType value() const { return this->chunk() + ValueWord; }
+  ValueType value() { return this->chunk() + ValueWord; }
+
+private:
+  static constexpr std::size_t ValueWord = 3;
+  static constexpr WordType HasValueSet = (static_cast<WordType>(0x1) << (8*sizeof(WordType) - 1));
+};
+
+
+/**
  * \brief Compact binary word node - only uses 3 words per node instead of 4.
  *
  * \verbatim
