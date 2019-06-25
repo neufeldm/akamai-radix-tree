@@ -7,6 +7,7 @@ include(CMakeDependentOption)
 option(AKAMAI_MAPPER_RADIXTREE_TEST "Build/run unit tests" OFF)
 option(AKAMAI_MAPPER_RADIXTREE_DOCS "Build Doxygen documentation" OFF)
 option(AKAMAI_MAPPER_RADIXTREE_EXAMPLES "Build RadixTree examples" OFF)
+option(AKAMAI_MAPPER_FETCH_DEPS "Attempt to find/download external dependencies (e.g. Google Test)" ON)
 cmake_dependent_option(BUILD_TESTING "" ON "AKAMAI_MAPPER_RADIXTREE_TEST" OFF)
 
 set(AKAMAI_MAPPER_INSTALL_INCLUDE "include/Akamai/Mapper")
