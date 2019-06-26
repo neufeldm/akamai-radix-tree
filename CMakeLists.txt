@@ -10,8 +10,8 @@ option(AKAMAI_MAPPER_RADIXTREE_EXAMPLES "Build RadixTree examples" OFF)
 option(AKAMAI_MAPPER_FETCH_DEPS "Attempt to find/download external dependencies (e.g. Google Test)" ON)
 cmake_dependent_option(BUILD_TESTING "" ON "AKAMAI_MAPPER_RADIXTREE_TEST" OFF)
 
-set(AKAMAI_MAPPER_INSTALL_INCLUDE "include/Akamai/Mapper" CACHE STRING "Relative subdirectory in which to install header files.")
-set(AKAMAI_MAPPER_INSTALL_DOC "doc/Akamai/Mapper" CACHE STRING "Relative subdirectory in which to install documentation files.")
+set(AKAMAI_MAPPER_INSTALL_INCLUDE "include/Akamai/Mapper/RadixTree" CACHE STRING "Subdirectory in which to install header files.")
+set(AKAMAI_MAPPER_INSTALL_DOC "doc/Akamai/Mapper/RadixTree" CACHE STRING "Subdirectory in which to install documentation files.")
 
 add_subdirectory(include)
 

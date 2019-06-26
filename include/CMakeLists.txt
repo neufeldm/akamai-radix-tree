@@ -58,7 +58,7 @@ ${CMAKE_CURRENT_LIST_DIR}/RadixTree/WordBlockAllocator.h
 install(
 FILES
 $<TARGET_PROPERTY:akamai-mapper-radixtree,INTERFACE_SOURCES>
-DESTINATION ./${AKAMAI_MAPPER_INSTALL_INCLUDE}/RadixTree)
+DESTINATION ${AKAMAI_MAPPER_INSTALL_INCLUDE})
 
 if (AKAMAI_MAPPER_RADIXTREE_DOCS)
   find_package(Doxygen)
@@ -77,7 +77,7 @@ if (AKAMAI_MAPPER_RADIXTREE_DOCS)
                        VERBATIM)
     add_custom_target(akamai-mapper-radixtree-doxygen ALL
                       DEPENDS ${AKAMAI_MAPPER_RADIXTREE_CMAKE_DOXYGEN_OUT}/html/index.html)
-    install(DIRECTORY ${AKAMAI_MAPPER_RADIXTREE_CMAKE_DOXYGEN_OUT}/html DESTINATION ./${AKAMAI_MAPPER_INSTALL_DOC}/RadixTree)
+    install(DIRECTORY ${AKAMAI_MAPPER_RADIXTREE_CMAKE_DOXYGEN_OUT}/html DESTINATION ./${AKAMAI_MAPPER_INSTALL_DOC})
   else (DOXYGEN_FOUND)
     message("Unable to build documention - Doxygen not found")
   endif(DOXYGEN_FOUND)
