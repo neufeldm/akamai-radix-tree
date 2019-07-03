@@ -13,8 +13,8 @@ INTERFACE
 
 target_include_directories(akamai-mapper-radixtree
 INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/RadixTree>
-  $<INSTALL_INTERFACE:RadixTree>
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR};${CMAKE_CURRENT_LIST_DIR}/RadixTree>"
+  $<INSTALL_INTERFACE:include>
 )
 
 target_sources(akamai-mapper-radixtree
@@ -54,6 +54,8 @@ ${CMAKE_CURRENT_LIST_DIR}/RadixTree/SimpleRadixTree.h
 ${CMAKE_CURRENT_LIST_DIR}/RadixTree/SimpleStack.h
 ${CMAKE_CURRENT_LIST_DIR}/RadixTree/WordBlockAllocator.h
 )
+
+export(TARGETS akamai-mapper-radixtree FILE akamai-mapper-radixtree-exports.cmake)
 
 install(
 FILES
