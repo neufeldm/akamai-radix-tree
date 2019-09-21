@@ -93,10 +93,10 @@ public:
   bool goParent() { throw std::runtime_error("LookupCursorRO: can't return"); return false; }
   bool canGoParent() const { return false; }
 
-  NodeValue coveringNodeValueRO() const { return coveringValue_; }
+  NodeValueRO coveringNodeValueRO() const { return coveringValue_; }
   std::size_t coveringNodeValueDepth() const { return coveringValueDepth_; }
   NodeValue nodeValue() const { return (atNode() ? NodeValue{coveringNode()} : NodeValue{}); }
-  NodeValue nodeValueRO() const { return nodeValue(); }
+  NodeValueRO nodeValueRO() const { return nodeValue(); }
 
 private:
   const Allocator* alloc_{nullptr};
@@ -184,7 +184,7 @@ public:
   bool canGoParent() const { return false; }
 
   NodeValue nodeValue() { return (atNode() ? NodeValue{coveringNode()} : NodeValue{}); }
-  NodeValue nodeValueRO() const { return (atNode() ? NodeValueRO{coveringNode()} : NodeValueRO{}); }
+  NodeValueRO nodeValueRO() const { return (atNode() ? NodeValueRO{coveringNode()} : NodeValueRO{}); }
 
   inline NodeValue addNode();
 
