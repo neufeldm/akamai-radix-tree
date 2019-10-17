@@ -326,6 +326,66 @@ TEST(BinaryTree, TestCoverBelowRoot) {
   ASSERT_EQ(*(cWORMGeneric.coveringNodeValueRO().getPtrRO()),belowRootVal2);
 }
 
+
+
+// Test with a value at the root, below,
+// at position off the extension in between.
+TEST(BinaryTree, TestExitExtension) {
+  BinaryUInt32Tree belowRootTree{};
+  uint32_t rootVal = 1;
+  uint32_t belowVal = 2;
+  BinaryPath16 belowPath{0,1,1,0};
+  BinaryPath16 betweenPath{0,1,0};
+  belowRootTree.cursor().addNode().set(rootVal);
+  cursorAddValueAt(belowRootTree.cursor(),belowPath,belowVal);
+
+  BinaryWORM32TreeBuilder buildWORM;
+  ASSERT_TRUE(buildWORM.start());
+  buildWORM.addNode(BinaryPath16{},true,&rootVal,{true,false});
+  buildWORM.addNode(belowPath,true,&belowVal,{false,false});
+  ASSERT_TRUE(buildWORM.finish());
+  BinaryWORM32Tree belowRootWORMTree(buildWORM.buffer());
+  auto belowRootWORMGenericTree = makeWORMTreeUIntGeneric<BinaryPath16>(BinaryWORMTreeUIntParams{true,4,4},buildWORM.buffer());
+
+  auto cRegular = belowRootTree.cursorRO();
+  auto cWalk = belowRootTree.walkCursorRO();
+  auto cLookup = belowRootTree.lookupCursorRO();
+  auto cWORM = belowRootWORMTree.walkCursorRO();
+  auto cWORMLookup = belowRootWORMTree.lookupCursorRO();
+  auto cWORMGeneric = belowRootWORMGenericTree.walkCursorRO();
+
+  // Verify that we've got our covering value at the root.
+  ASSERT_EQ(*(cRegular.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(*(cWalk.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(*(cLookup.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(*(cWORM.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(*(cWORMLookup.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(*(cWORMGeneric.coveringNodeValueRO().getPtrRO()),rootVal);
+
+  // Now go down a path, check the covering value again.
+  cursorGoto(cRegular,betweenPath);
+  cursorGoto(cWalk,betweenPath);
+  cursorGoto(cLookup,betweenPath);
+  cursorGoto(cWORM,betweenPath);
+  cursorGoto(cWORMLookup,betweenPath);
+  cursorGoto(cWORMGeneric,betweenPath);
+
+  ASSERT_EQ(*(cRegular.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(cRegular.coveringNodeValueDepth(),0);
+  ASSERT_EQ(*(cWalk.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(cWalk.coveringNodeValueDepth(),0);
+  ASSERT_EQ(*(cLookup.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(cLookup.coveringNodeValueDepth(),0);
+  ASSERT_EQ(*(cWORM.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(cWORM.coveringNodeValueDepth(),0);
+  ASSERT_EQ(*(cWORMLookup.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(cWORMLookup.coveringNodeValueDepth(),0);
+  ASSERT_EQ(*(cWORMGeneric.coveringNodeValueRO().getPtrRO()),rootVal);
+  ASSERT_EQ(cWORMGeneric.coveringNodeValueDepth(),0);
+}
+
+
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -284,6 +284,7 @@ BinaryWORMCursorRO<PathT,BinaryWORMNodeT,NodeStackT>::canGoChildNode(std::size_t
 ////////////////////////////////////////////////
 template <typename PathT,typename BinaryWORMNodeT>
 bool BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeT>::goChild(std::size_t child) {
+  if (!canGoChild(child)) { return false; }
   if (depthBelow_ == 0) {
     // We're at a node, drop down into the immediate child
     nodeBelow_ = Node{nodeAtAbove_}.getChild(child);
@@ -296,8 +297,12 @@ bool BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeT>::goChild(std::size_t child)
     // Check to see if we match the next step in the edge down to
     // the node below. If so, trim it off. If not, then reset the edge
     // as well as the node below ref - we've gone outside the edge.
-    if (child == firstEdgeStep()) { trimFirstEdgeStep(); }
-    else { clearEdge(); }
+    if (child == firstEdgeStep()) {
+      trimFirstEdgeStep();
+    } else {
+      clearEdge();
+      nodeBelow_ = nullptr;
+    }
   }
   ++depthBelow_;
   // See if we've arrived at the node below (if there is one).
