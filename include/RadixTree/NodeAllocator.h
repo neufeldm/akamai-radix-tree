@@ -57,7 +57,7 @@ template <typename ObjType>
 class AllocatorNew
 {
 public:
-  typedef void* RefType;
+  using RefType = ObjType*;
   static constexpr RefType nullRef = nullptr;
 
   template <typename... Args>
@@ -71,6 +71,7 @@ template <>
 struct AllocatorTraits<AllocatorNew> {
   using RefType = void*;
   static constexpr RefType nullRef = nullptr;
+  static constexpr bool IsDirectPtr = true;
 };
 
 }

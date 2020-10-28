@@ -45,7 +45,8 @@ public:
   using NodeImplType = NodeImplT;
   using Edge = typename NodeImplType::EdgeType;
   using ValueType = typename NodeImplType::ValueType ;
-  using NodeImplRefType = typename NodeImplType::NodeImplRefType ;
+  using NodeImplRefType = typename NodeImplType::NodeImplRefType;
+  static constexpr NodeImplRefType nodeNullRef = NodeImplType::nodeNullRef;
   using AllocatorType = AllocT;
   static constexpr std::size_t Radix = NodeImplType::Radix;
   static constexpr bool ValueIsCopy = NodeImplType::ValueIsCopy;

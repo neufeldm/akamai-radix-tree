@@ -6,3 +6,4 @@ CMakeFiles
 build-release
 build-debug
 .vscode
+build-all-release

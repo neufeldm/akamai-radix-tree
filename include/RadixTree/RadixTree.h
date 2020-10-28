@@ -60,7 +60,7 @@ public:
   using Value = typename CursorROType::ValueType;
 
   template <typename... AllocatorArgs>
-  RadixTree(AllocatorArgs&&... aa) : alloc_(std::forward<AllocatorArgs>(aa)...), root_(alloc_.newRef()) {}
+  RadixTree(AllocatorArgs&&... aa) : alloc_(std::forward<AllocatorArgs>(aa)...), root_(static_cast<NodeRefType>(alloc_.newRef())) {}
 
   // No auto copying allowed - any tree copying must be done manually
   RadixTree(const MyType& o) = delete;
@@ -118,9 +118,9 @@ public:
   const NodeAllocatorType& nodeAllocator() const { return alloc_; }
 
 private:
-  using NodeRefType = typename NodeAllocatorType::RefType;
+  using NodeRefType = typename NodeType::NodeImplRefType;
   NodeAllocatorType alloc_{};
-  NodeRefType root_{NodeAllocatorType::nullRef};
+  NodeRefType root_{NodeType::nodeNullRef};
 };
 
 
@@ -133,7 +133,7 @@ RadixTree<PathType,NodeType,NodeStackType>::RadixTree(RadixTree<PathType,NodeTyp
   : alloc_(std::move(o.alloc_))
   , root_(std::move(o.root_))
 {
-  o.root_ = NodeAllocatorType::nullRef;
+  o.root_ = NodeType::nodeNullRef;
 }
 
 template <typename PathType,typename NodeType,template<typename,std::size_t> class NodeStackType>
