@@ -26,6 +26,8 @@ SOFTWARE.
 #include <cstddef>
 #include <array>
 
+#include "NodeAllocator.h"
+
 namespace Akamai {
 namespace Mapper {
 namespace RadixTree {
@@ -39,7 +41,7 @@ namespace RadixTree {
  * e.g. a reference could just be an integer offset into a flat slab of nodes instead of
  * a regular pointer.
  */
-template <std::size_t R,typename EdgeT,typename NodeRef,NodeRef nullRef>
+template <std::size_t R,typename EdgeT>
 class SimpleNodeImplBase
 {
 public:
@@ -56,9 +58,9 @@ private:
 };
 
   // Add routines for handling an embedded value
-template <std::size_t R,typename EdgeT,typename ValueT,typename NodeRef,NodeRef nullRef>
+template <std::size_t R,typename EdgeT,typename ValueT>
 class SimpleNodeImplBaseValue
-  : public SimpleNodeImplBase<R,EdgeT,NodeRef,nullRef>
+  : public SimpleNodeImplBase<R,EdgeT>
 {
 public:
   SimpleNodeImplBaseValue() = default;
@@ -92,9 +94,9 @@ private:
 /**
  * \brief Specialize for bool - no point in storing full extra value if we don't need to.
  */
-template <std::size_t R,typename EdgeT,typename NodeRef,NodeRef nullRef>
-class SimpleNodeImplBaseValue<R,EdgeT,bool,NodeRef,nullRef>
-  : public SimpleNodeImplBase<R,EdgeT,NodeRef,nullRef>
+template <std::size_t R,typename EdgeT>
+class SimpleNodeImplBaseValue<R,EdgeT,bool>
+  : public SimpleNodeImplBase<R,EdgeT>
 {
 public:
   SimpleNodeImplBaseValue() = default;
@@ -110,15 +112,16 @@ private:
   bool hasValue_{false};
 };
 
-  // finally add routines for handling children
+// finally add routines for handling children
 template <std::size_t R,typename EdgeT,typename ValueT,typename NodeRef,NodeRef nullRef>
 class SimpleNodeImpl
-  : public SimpleNodeImplBaseValue<R,EdgeT,ValueT,NodeRef,nullRef>
+  : public SimpleNodeImplBaseValue<R,EdgeT,ValueT>
 {
 public:
+  using MyType = SimpleNodeImpl<R,EdgeT,ValueT,NodeRef,nullRef>;
+  using NodeImplRefType = typename AllocatorNodeRefTraits<MyType,NodeRef,nullRef>::Type;
+  static constexpr NodeImplRefType nodeNullRef = AllocatorNodeRefTraits<MyType,NodeRef,nullRef>::nullRef;
   using EdgeType = EdgeT;
-  using NodeImplRefType = NodeRef;
-  static constexpr NodeImplRefType nodeNullRef = nullRef;
   static constexpr std::size_t Radix = R;
   static constexpr bool ValueIsCopy = false;
   using ValueType = ValueT;
@@ -126,18 +129,18 @@ public:
   SimpleNodeImpl() = default;
   ~SimpleNodeImpl() = default;
 
-  NodeRef getChild(std::size_t c) const { return children_.at(c); }
-  NodeRef setChild(std::size_t c,NodeRef newChild) {
-    NodeRef prevChild = children_.at(c);
+  NodeImplRefType getChild(std::size_t c) const { return children_.at(c); }
+  NodeImplRefType setChild(std::size_t c,NodeImplRefType newChild) {
+    NodeImplRefType prevChild = children_.at(c);
     children_[c] = newChild;
     return prevChild;
   }
-  NodeRef detachChild(std::size_t c) {
+  NodeImplRefType detachChild(std::size_t c) {
     auto prevChild = children_.at(c);
-    children_[c] = nullRef;
+    children_[c] = static_cast<NodeImplRefType>(nullRef);
     return prevChild;
   }
-  bool hasChild(std::size_t c) const { return (children_.at(c) != nullRef); }
+  bool hasChild(std::size_t c) const { return (children_.at(c) != static_cast<NodeImplRefType>(nullRef)); }
   bool isLeaf() const {
     for (std::size_t c=0;c<R;++c) { if (hasChild(c)) { return false; } }
     return true; 
@@ -145,7 +148,7 @@ public:
 
 private:
   // Children - store as simple array
-  std::array<NodeRef,R> children_;
+  std::array<NodeImplRefType,R> children_;
 };
 
 /**
@@ -155,12 +158,13 @@ private:
  */
 template <std::size_t R,typename EdgeT,typename ValueT,typename NodeRef,NodeRef nullRef,template <typename,typename> class ChildMapT>
 class SimpleNodeImplMap
-  : public SimpleNodeImplBaseValue<R,EdgeT,ValueT,NodeRef,nullRef>
+  : public SimpleNodeImplBaseValue<R,EdgeT,ValueT>
 {
 public:
+  using MyType = SimpleNodeImplMap<R,EdgeT,ValueT,NodeRef,nullRef,ChildMapT>;
+  using NodeImplRefType = typename AllocatorNodeRefTraits<MyType,NodeRef,nullRef>::Type;
+  static constexpr NodeImplRefType nodeNullRef = AllocatorNodeRefTraits<MyType,NodeRef,nullRef>::nullRef;
   using EdgeType = EdgeT;
-  using NodeImplRefType = NodeRef;
-  static constexpr NodeImplRefType nodeNullRef = nullRef;
   static constexpr std::size_t Radix = R;
   static constexpr bool ValueIsCopy = false;
   using ValueType = ValueT;
@@ -168,16 +172,16 @@ public:
   SimpleNodeImplMap() = default;
   ~SimpleNodeImplMap() = default;
 
-  NodeRef getChild(std::size_t c) const {
+  NodeImplRefType getChild(std::size_t c) const {
     if (c >= R) { throw std::range_error("getChild() - child out of bounds"); }
     auto it = children_.find(c);
-    if (it == children_.end()) { return nullRef; }
+    if (it == children_.end()) { return nodeNullRef; }
     return it->second;
   }
-  NodeRef setChild(std::size_t c,NodeRef newChild) {
-    if (newChild == nullRef) { return detachChild(c); }
+  NodeImplRefType setChild(std::size_t c,NodeImplRefType newChild) {
+    if (newChild == nodeNullRef) { return detachChild(c); }
     if (c >= R) { throw std::range_error("setChild() - child out of bounds"); }
-    NodeRef prevChild{nullRef};
+    NodeImplRefType prevChild{nodeNullRef};
     auto it = children_.find(c);
     if (it != children_.end()) {
       prevChild = it->second;
@@ -186,9 +190,9 @@ public:
     else { children_[c] = newChild; }    
     return prevChild;
   }
-  NodeRef detachChild(std::size_t c) {
+  NodeImplRefType detachChild(std::size_t c) {
     if (c >= R) { throw std::range_error("detachChild() - child out of bounds"); }
-    NodeRef prevChild{nullRef};
+    NodeImplRefType prevChild{nodeNullRef};
     auto it = children_.find(c);
     if (it != children_.end()) {
       prevChild = it->second;
@@ -199,13 +203,13 @@ public:
   bool hasChild(std::size_t c) const {
     auto it = children_.find(c);
     if (it == children_.end()) { return false; }
-    return (it->second != nullRef);
+    return (it->second != nodeNullRef);
   }
 
   bool isLeaf() const { return children_.empty(); }
 
 private:
-  ChildMapT<std::size_t,NodeRef> children_{};
+  ChildMapT<std::size_t,NodeImplRefType> children_{};
 };
 
 

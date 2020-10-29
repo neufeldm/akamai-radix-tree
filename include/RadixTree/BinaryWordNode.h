@@ -51,6 +51,7 @@ public:
   // Ref edge, but we steal some bits for metadata
   using Edge = BinaryWordEdgeRef<AllocatorType,WordType,ExtTraits::sizeBits,ExtTraits::pathBits,ExtLead,ExtTrail>;
   using NodeImplRefType = WordType;
+  static constexpr NodeImplRefType nodeNullRef = AllocatorType::nullRef;
   using NodeImplType = WordType*;
   // Order of binary tree is always 2
   static constexpr std::size_t Radix = 2;

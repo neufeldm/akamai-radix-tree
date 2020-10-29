@@ -51,13 +51,44 @@ template <template <typename> class Alloc>
 struct AllocatorTraits {};
 
 /**
+ * \brief Type traits for tying allocator and node reference types together.
+ *
+ * For allocators that use simple pointers to nodes, we'd like to be able to have the
+ * actual pointer type used for node children and tree roots. However, we're stuck
+ * using void* (or some other type that doesn't depend on the node type) in our allocators.
+ * To allow this we'll have a separate traits class that specifies the reference/pointer type
+ * that a node implementation should use internally for its children. By default we use
+ * whatever reference type is specified by the allocator, other allocators can specialize.
+ * Note that we don't specialize explicitly on the allocator type, just the reference type.
+ */
+template <typename NodeImplType,typename NodeRef,NodeRef nullRefVal>
+struct AllocatorNodeRefTraits {
+  using Type = NodeRef;
+  static constexpr NodeRef nullRef = nullRefVal;
+};
+
+/**
+ * \brief Node reference specialization for simple pointer allocators.
+ *
+ * For allocators that just hand back simple pointers to the allocated object, e.g. "new" and "delete",
+ * we can use the actual node pointer type. If you've got an allocator that does this, then
+ * you can use void* and nullptr for your object type and null reference.
+ */
+template <typename NodeImplType>
+struct AllocatorNodeRefTraits<NodeImplType,void*,nullptr> {
+  using Type = NodeImplType*;
+  static constexpr NodeImplType* nullRef = nullptr;
+};
+
+
+/**
  * \brief Baseline allocator that wraps new/delete.
  */
 template <typename ObjType>
 class AllocatorNew
 {
 public:
-  typedef void* RefType;
+  using RefType = ObjType*;
   static constexpr RefType nullRef = nullptr;
 
   template <typename... Args>
@@ -71,6 +102,7 @@ template <>
 struct AllocatorTraits<AllocatorNew> {
   using RefType = void*;
   static constexpr RefType nullRef = nullptr;
+  static constexpr bool IsDirectPtr = true;
 };
 
 }
