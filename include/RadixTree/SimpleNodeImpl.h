@@ -26,6 +26,8 @@ SOFTWARE.
 #include <cstddef>
 #include <array>
 
+#include "NodeAllocator.h"
+
 namespace Akamai {
 namespace Mapper {
 namespace RadixTree {
@@ -110,19 +112,6 @@ private:
   bool hasValue_{false};
 };
 
-template <typename NodeImplType,typename NodeRef,NodeRef nullRefVal>
-struct NodeRefTraits {
-  using Type = NodeRef;
-  static constexpr NodeRef nullRef = nullRefVal;
-};
-
-
-template <typename NodeImplType>
-struct NodeRefTraits<NodeImplType,void*,nullptr> {
-  using Type = NodeImplType*;
-  static constexpr NodeImplType* nullRef = nullptr;
-};
-
 // finally add routines for handling children
 template <std::size_t R,typename EdgeT,typename ValueT,typename NodeRef,NodeRef nullRef>
 class SimpleNodeImpl
@@ -130,8 +119,8 @@ class SimpleNodeImpl
 {
 public:
   using MyType = SimpleNodeImpl<R,EdgeT,ValueT,NodeRef,nullRef>;
-  using NodeImplRefType = typename NodeRefTraits<MyType,NodeRef,nullRef>::Type;
-  static constexpr NodeImplRefType nodeNullRef = NodeRefTraits<MyType,NodeRef,nullRef>::nullRef;
+  using NodeImplRefType = typename AllocatorNodeRefTraits<MyType,NodeRef,nullRef>::Type;
+  static constexpr NodeImplRefType nodeNullRef = AllocatorNodeRefTraits<MyType,NodeRef,nullRef>::nullRef;
   using EdgeType = EdgeT;
   static constexpr std::size_t Radix = R;
   static constexpr bool ValueIsCopy = false;
@@ -173,8 +162,8 @@ class SimpleNodeImplMap
 {
 public:
   using MyType = SimpleNodeImplMap<R,EdgeT,ValueT,NodeRef,nullRef,ChildMapT>;
-  using NodeImplRefType = typename NodeRefTraits<MyType,NodeRef,nullRef>::Type;
-  static constexpr NodeImplRefType nodeNullRef = NodeRefTraits<MyType,NodeRef,nullRef>::nullRef;
+  using NodeImplRefType = typename AllocatorNodeRefTraits<MyType,NodeRef,nullRef>::Type;
+  static constexpr NodeImplRefType nodeNullRef = AllocatorNodeRefTraits<MyType,NodeRef,nullRef>::nullRef;
   using EdgeType = EdgeT;
   static constexpr std::size_t Radix = R;
   static constexpr bool ValueIsCopy = false;
