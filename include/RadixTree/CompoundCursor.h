@@ -42,7 +42,6 @@ namespace RadixTree {
  * The node values and current cursor paths are all presented as tuples of the individual
  * values for each contained cursor.
  */
-
 template <typename... CursorTypes>
 class CompoundCursorRO
 {
@@ -55,7 +54,7 @@ public:
   using AllCursorsConstRef = std::tuple<typename std::add_const<typename std::add_lvalue_reference<typename std::decay<CursorTypes>::type>::type>::type...>;
 
   static_assert(CheckCursorRadixMatch<AllCursors>::value,"all cursors must have same radix");
-  static_assert(CheckCursorPathSizeMatch<AllCursors>::value,"all cursors must have same path size");
+  static_assert(CheckCursorMaxDepthMatch<AllCursors>::value,"all cursors must have same maximum depth");
   
   static constexpr std::size_t Radix = std::tuple_element<0,AllCursors>::type::Radix;
   static constexpr std::size_t MaxDepth = std::tuple_element<0,AllCursors>::type::MaxDepth;
