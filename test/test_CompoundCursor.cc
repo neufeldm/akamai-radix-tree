@@ -149,6 +149,108 @@ TEST(CompoundCursor, FollowTest) {
   ASSERT_EQ(*(std::get<2>(allCoveringNodeValues).getPtrRO()),0);
 }
 
+TEST(CompoundCursor, Nested) {
+  Tree6_3 tree1;
+  Tree6_3 tree2;
+  Tree6_3 tree3;
+  Tree6_3 tree4;
+  Tree6_3 tree5;
+  std::vector<TestPath<2,6>> paths{{0,0},{0,1},{1,0},{1,1}};
+
+  // Start with nesting 1 deep
+  auto nested1 = make_compound_cursor(tree1.cursor(),
+                                      make_compound_cursor(tree2.cursor(),tree3.cursor()));
+  uint32_t curVal = 0;
+  for (const auto& path : paths) {
+    cursorGoto(nested1,path);
+    nested1.addNode();
+    auto topValues = nested1.nodeValue();
+    auto tree1Value = std::get<0>(topValues);
+    auto tree2Value = std::get<0>(std::get<1>(topValues));
+    auto tree3Value = std::get<1>(std::get<1>(topValues));
+    tree1Value.set(curVal++);
+    tree2Value.set(curVal++);
+    tree3Value.set(curVal++);
+  }
+
+  auto flat1 = tree1.cursor();
+  auto flat2 = tree2.cursor();
+  auto flat3 = tree3.cursor();
+  uint32_t expectedVal = 0;
+  for (const auto& path : paths) {
+    cursorGoto(flat1,path);
+    cursorGoto(flat2,path);
+    cursorGoto(flat3,path);
+
+    ASSERT_TRUE(flat1.atValue());
+    ASSERT_EQ(*(flat1.nodeValueRO().getPtrRO()),expectedVal);
+    ++expectedVal;
+
+    ASSERT_TRUE(flat2.atValue());
+    ASSERT_EQ(*(flat2.nodeValueRO().getPtrRO()),expectedVal);
+    ++expectedVal;
+
+    ASSERT_TRUE(flat3.atValue());
+    ASSERT_EQ(*(flat3.nodeValueRO().getPtrRO()),expectedVal);
+    ++expectedVal;
+  }
+
+  // Now nest two levels
+  auto nested2 = make_compound_cursor(tree1.cursor(),
+                                      make_compound_cursor(tree2.cursor(),tree3.cursor(),
+                                                           make_compound_cursor(tree4.cursor(),tree5.cursor())));
+  expectedVal = 0;
+  for (const auto& path : paths) {
+    uint32_t val45 = 2*expectedVal + 1;
+    cursorGoto(nested2,path);
+    nested2.addNode();
+    auto topValues = nested2.nodeValue();
+    auto tree1val = std::get<0>(topValues);
+    ASSERT_TRUE(tree1val.atValue());
+    ASSERT_EQ(*(tree1val.getPtrRO()),expectedVal);
+    ++expectedVal;
+
+    auto level1Values = std::get<1>(topValues);
+
+    auto tree2val = std::get<0>(level1Values);
+    ASSERT_TRUE(tree2val.atValue());
+    ASSERT_EQ(*(tree2val.getPtrRO()),expectedVal);
+    ++expectedVal;
+
+    auto tree3val = std::get<1>(level1Values);
+    ASSERT_TRUE(tree3val.atValue());
+    ASSERT_EQ(*(tree3val.getPtrRO()),expectedVal);
+    ++expectedVal;
+
+    auto level2Values = std::get<2>(level1Values);
+    auto tree4val = std::get<0>(level2Values);
+    ASSERT_FALSE(tree4val.atValue());
+    tree4val.set(val45++);
+    auto tree5val = std::get<1>(level2Values);
+    ASSERT_FALSE(tree5val.atValue());
+    tree5val.set(val45++);
+  }
+
+  expectedVal = 0;
+  auto flat4 = tree4.cursorRO();
+  auto flat5 = tree5.cursorRO();
+  for (const auto& path : paths) {
+    uint32_t val45 = 2*expectedVal + 1;
+    cursorGoto(flat4,path);
+    cursorGoto(flat5,path);
+
+    ASSERT_TRUE(flat4.atValue());
+    ASSERT_EQ(*(flat4.nodeValueRO().getPtrRO()),val45);
+    ++val45;
+
+    ASSERT_TRUE(flat5.atValue());
+    ASSERT_EQ(*(flat5.nodeValueRO().getPtrRO()),val45);
+
+    expectedVal += 3;
+  }
+
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

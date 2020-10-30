@@ -194,6 +194,21 @@ struct CheckCursorRadixMatch<CursorTuple,0>
 };
 
 template <typename CursorTuple,std::size_t I=std::tuple_size<CursorTuple>::value - 1>
+struct CheckCursorMaxDepthMatch
+  : public CheckCursorMaxDepthMatch<CursorTuple,I-1>
+{
+  static_assert(std::tuple_element<I,CursorTuple>::type::MaxDepth == std::tuple_element<I-1,CursorTuple>::type::MaxDepth,
+                "all cursors must have same maximum depth");
+};
+
+template <typename CursorTuple>
+struct CheckCursorMaxDepthMatch<CursorTuple,0>
+{
+  static constexpr bool value = true;
+};
+
+
+template <typename CursorTuple,std::size_t I=std::tuple_size<CursorTuple>::value - 1>
 struct CheckCursorPathSizeMatch
   : public CheckCursorPathSizeMatch<CursorTuple,I-1>
 {
