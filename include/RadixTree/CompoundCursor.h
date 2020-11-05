@@ -65,7 +65,7 @@ public:
   using PathType = std::tuple<typename std::decay<CursorTypes>::type::PathType...>;
   using DepthType = std::tuple<decltype(std::decay<CursorTypes>::type::MaxDepth)...>;
 
-  CompoundCursorRO() = delete;
+  CompoundCursorRO() = default;
   CompoundCursorRO(const CursorTypes&... cursors) : allCursors_(cursors...) {}
   CompoundCursorRO(const CompoundCursorRO& other) = default;
   CompoundCursorRO(CompoundCursorRO&& other) = default;
@@ -151,7 +151,7 @@ public:
   static constexpr std::size_t Radix = CompoundCursorRO<CursorTypes...>::Radix;
   static constexpr std::size_t MaxDepth = CompoundCursorRO<CursorTypes...>::MaxDepth;
 
-  CompoundCursor() = delete;
+  CompoundCursor() = default;
   CompoundCursor(const CursorTypes&... cursors) : CompoundCursorRO<CursorTypes...>(cursors...) {}
   CompoundCursor(const CompoundCursor& other) = default;
   CompoundCursor(CompoundCursor&& other) = default;
@@ -210,7 +210,7 @@ public:
   static constexpr std::size_t Radix = BaseCursor::Radix;
   static constexpr std::size_t MaxDepth = BaseCursor::MaxDepth;
 
-  CompoundFollowCursorRO() = delete;
+  CompoundFollowCursorRO() = default;
   CompoundFollowCursorRO(const CursorTypes&... cursors) : BaseCursor(cursors...) {}
   CompoundFollowCursorRO(const CompoundFollowCursorRO& other) = default;
   CompoundFollowCursorRO(CompoundFollowCursorRO&& other) = default;
@@ -245,7 +245,7 @@ public:
   static constexpr std::size_t Radix = BaseCursor::Radix;
   static constexpr std::size_t MaxDepth = BaseCursor::MaxDepth;
 
-  CompoundFollowOverCursorRO() = delete;
+  CompoundFollowOverCursorRO() = default;
   CompoundFollowOverCursorRO(const CursorTypes&... cursors) : BaseCursor(cursors...) {}
   CompoundFollowOverCursorRO(const CompoundFollowOverCursorRO& other) = default;
   CompoundFollowOverCursorRO(CompoundFollowOverCursorRO&& other) = default;

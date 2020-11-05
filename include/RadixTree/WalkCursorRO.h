@@ -72,7 +72,7 @@ public:
   }
   WalkCursorRO(const WalkCursorRO& other) = default;
   WalkCursorRO(WalkCursorRO&& other) = default;
-  WalkCursorRO() = delete;
+  WalkCursorRO() = default;
   WalkCursorRO& operator=(const WalkCursorRO& other) = default;
   WalkCursorRO& operator=(WalkCursorRO&& other) = default;
 
@@ -96,7 +96,7 @@ public:
   NodeValue nodeValueRO() const { return nodeValue(); }
 
 private:
-  const Allocator* alloc_;
+  const Allocator* alloc_{nullptr};
   // We keep a stack of internal nodes and their depth in the path
   struct NodePos {
     // Reference to node at/above current position

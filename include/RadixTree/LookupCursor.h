@@ -67,7 +67,7 @@ public:
   }
   LookupCursorRO(const LookupCursorRO& other) = default;
   LookupCursorRO(LookupCursorRO&& other) = default;
-  LookupCursorRO() = delete;
+  LookupCursorRO() = default;
   LookupCursorRO& operator=(const LookupCursorRO& other) = default;
   LookupCursorRO& operator=(LookupCursorRO&& other) = default;
 
@@ -157,7 +157,7 @@ public:
   // benefits offhand that outweigh the potential for undesirable behavior.
   LookupCursorWO(const LookupCursorWO& other) = delete;
   LookupCursorWO(LookupCursorWO&& other) = default;
-  LookupCursorWO() = delete;
+  LookupCursorWO() = default;
   LookupCursorWO& operator=(const LookupCursorWO& other) = delete;
   LookupCursorWO& operator=(LookupCursorWO&& other) = default;
 

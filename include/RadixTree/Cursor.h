@@ -61,7 +61,7 @@ public:
   }
   CursorRO(const CursorRO& other) = default;
   CursorRO(CursorRO&& other) = default;
-  CursorRO() = delete;
+  CursorRO() = default;
   CursorRO& operator=(const CursorRO& other) = default;
   CursorRO& operator=(CursorRO&& other) = default;
 
@@ -235,7 +235,7 @@ public:
   Cursor(Allocator& a,NodeImplRef root) : CursorROType(a,root) {}
   Cursor(const Cursor& other) = default;
   Cursor(Cursor&& other) = default;
-  Cursor() = delete;
+  Cursor() = default;
   Cursor& operator=(const Cursor& other) = default;
   Cursor& operator=(Cursor&& other) = default;
  
