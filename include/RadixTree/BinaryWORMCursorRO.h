@@ -60,7 +60,7 @@ public:
     nodeStack_.push_back(std::move(rootPos));
   }
 
-  PathType getPath() const { return curPath_; }
+  const PathType& getPath() const { return curPath_; }
   bool atNode() const { return (nodeStack_.back().depthBelow == 0); }
   bool atLeafNode() const { return atNode() && backNode().isLeaf(); }
   bool atValue() const { return (atNode() && backNode().hasValue()); }
@@ -154,7 +154,7 @@ public:
 
   // Interface methods start here
   
-  PathType getPath() const { return curPath_; }
+  const PathType& getPath() const { return curPath_; }
   
   bool atNode() const { return (depthBelow_ == 0); }
   bool atValue() const { return (atNode() && coveringNode().hasValue()); }

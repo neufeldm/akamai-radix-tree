@@ -70,7 +70,7 @@ public:
   virtual bool canGoChildNode(std::size_t child) const = 0;
   virtual bool goParent() = 0;
   virtual bool canGoParent() const = 0;
-  virtual PathType getPath() const = 0;
+  virtual const PathType& getPath() const = 0;
 
   virtual ValueType valueCopy() const = 0;
   virtual bool hasCoveringValue() const = 0;
@@ -116,7 +116,7 @@ public:
   bool goChild(std::size_t child) { return cursorImpl_->goChild(child); }
   bool canGoChild(std::size_t child) const { return cursorImpl_->canGoChild(child); }
   bool canGoChildNode(std::size_t child) const { return cursorImpl_->canGoChildNode(child); }
-  PathType getPath() const { return cursorImpl_->getPath(); }
+  const PathType& getPath() const { return cursorImpl_->getPath(); }
  
   bool goParent() { return cursorImpl_->goParent(); }
   bool canGoParent() const { return cursorImpl_->canGoParent(); }

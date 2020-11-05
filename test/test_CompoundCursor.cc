@@ -117,6 +117,8 @@ TEST(CompoundCursor, FollowTest) {
   constexpr std::size_t followOverSpotCount = (4 + 4 + 4);
 
   auto compoundCursor = make_compound_cursor_ro(follower.cursor(),leader1.cursor(),leader2.cursor());
+  auto compoundPath = compoundCursor.getPath();
+  ASSERT_EQ(std::get<0>(compoundPath),std::get<1>(compoundPath));
   std::size_t compoundSpotCount = countCompoundSpots(compoundCursor);
   ASSERT_EQ(allSpotCount,compoundSpotCount);
 
@@ -171,6 +173,7 @@ TEST(CompoundCursor, Nested) {
     tree1Value.set(curVal++);
     tree2Value.set(curVal++);
     tree3Value.set(curVal++);
+    //auto topPaths = nested1.getPath();
   }
 
   auto flat1 = tree1.cursor();

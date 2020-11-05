@@ -118,7 +118,7 @@ public:
   virtual bool canGoChildNode(std::size_t child) const override { return actualCursor_.canGoChildNode(child); }
   virtual bool goParent() override { return actualCursor_.goParent(); }
   virtual bool canGoParent() const override { return actualCursor_.canGoParent(); }
-  virtual PathType getPath() const override { return actualCursor_.getPath(); }
+  virtual const PathType& getPath() const override { return actualCursor_.getPath(); }
   virtual ValueType valueCopy() const override { return static_cast<uint64_t>(*(actualCursor_.nodeValueRO().getPtrRO())); }
   virtual GenericImpl* copy() const override { return new BinaryWORMCursorUIntGenericImpl<ActualImplT>(actualCursor_); }
   virtual ValueType coveringValueCopy() const override { return static_cast<uint64_t>(*(actualCursor_.coveringNodeValueRO().getPtrRO())); }

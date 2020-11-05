@@ -73,7 +73,7 @@ public:
 
   // Interface methods start here
   
-  PathType getPath() const { return curPath_; }
+  const PathType& getPath() const { return curPath_; }
   
   bool atNode() const { return (depthBelow_ == 0); }
   bool atLeafNode() const { return atNode() && Node{alloc_,nodeRefAtAbove_}.isLeaf(); }
@@ -163,7 +163,7 @@ public:
 
   // Interface methods start here
   
-  PathType getPath() const { return curPath_; }
+  const PathType& getPath() const { return curPath_; }
   
   bool atNode() const { return (depthBelow_ == 0); }
   bool atLeafNode() const { return atNode() && Node{alloc_,nodeRefAtAbove_}.isLeaf(); }

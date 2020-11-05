@@ -73,7 +73,7 @@ public:
   CompoundCursorRO& operator=(CompoundCursorRO&& other) = default;
 
   // Interface methods start here
-  PathType getPath() const { return callOnAllTuple(callOnEachTupleResult(CursorGetPath{}, allCursors_)); }
+  PathType getPath() const { return callOnEachTupleResult(CursorGetPath{}, allCursors_); }
   bool atNode() const { return callOnAllTuple(CheckIfAny<CursorAtNode>{},allCursors_,CursorAtNode{}); }
   bool atLeafNode() const { return allAtNode() && callOnAllTuple(CheckIfAll<CursorAtLeafNode>{},allCursors_,CursorAtLeafNode{}); }
   bool allAtNode() const { return callOnAllTuple(CheckIfAll<CursorAtNode>{},allCursors_,CursorAtNode{}); }
