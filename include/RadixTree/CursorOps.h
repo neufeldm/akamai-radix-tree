@@ -97,7 +97,7 @@ void cursorAddValueAt(CursorType&& c,PathType&& p,ValueType&& v) {
  */
 template <typename CursorType,typename PathType>
 bool cursorRemoveValueAt(CursorType&& c,PathType&& p) {
-  std::size_t valueDepth = cursorGotoCoveringValue(std::forward<CursorType>(c),std::forward<PathType>(p));
+  std::size_t valueDepth = cursorGotoCovering(std::forward<CursorType>(c),std::forward<PathType>(p));
   if (valueDepth != p.size()) { return false; }
   // Clear our value, remove the node if possible,
   // then wind back up the parent chain removing nodes
@@ -115,7 +115,7 @@ bool cursorRemoveValueAt(CursorType&& c,PathType&& p) {
  */
 template <typename CursorType,typename PathType>
 std::size_t cursorRemoveCoveringValue(CursorType&& c,PathType&& p) {
-  std::size_t valueDepth = cursorGotoCoveringValue(std::forward<CursorType>(c),std::forward<PathType>(p));
+  std::size_t valueDepth = cursorGotoCovering(std::forward<CursorType>(c),std::forward<PathType>(p));
   // Clear our value, remove the node if possible,
   // then wind back up the parent chain removing nodes
   // until we can't remove any more of them.
