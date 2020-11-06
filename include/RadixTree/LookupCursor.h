@@ -112,7 +112,7 @@ private:
   Node coveringNode() const { return Node{alloc_,nodeRefAtAbove_}; }
 
   // Keep our current position in the tree
-  PathType curPath_;
+  PathType curPath_{};
   // Keep the last actual node value we saw during our descent
   NodeValue coveringValue_{};
   std::size_t coveringValueDepth_{0};

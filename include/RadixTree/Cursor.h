@@ -51,10 +51,10 @@ public:
   using Allocator = AllocatorT;
   using PathType = PathT;
   using NodeEdge = typename NodeT::Edge;
+  static constexpr std::size_t NO_CHILD = std::numeric_limits<std::size_t>::max();
 
   CursorRO(const Allocator& a, NodeImplRef root)
     : alloc_(&a)
-    , curPathNodeChild_(std::numeric_limits<std::size_t>::max())
   {
     NodePos rootPos(root,0);
     nodeStack_.push_back(rootPos);
@@ -172,9 +172,9 @@ protected:
   // We keep a stack of internal nodes and their depth in the path
   struct NodePos {
     // Node reference
-    NodeImplRef nodeRef;
+    NodeImplRef nodeRef{Allocator::nullRef};
     // Depth of "node" from the root - root node is at 0
-    std::size_t depth;
+    std::size_t depth{0};
 
     NodePos(NodeImplRef nref = Allocator::nullRef,size_t d = 0)
       : nodeRef(nref)
@@ -196,15 +196,15 @@ protected:
   }    
   
   // Keep our current position in the tree
- PathType curPath_;
+ PathType curPath_{};
 
   // If our current path is below a node then curPathChild_
   // is the direction it takes when leaving that node. If
   // our current path is more than 1 step below a node then
   // curPathEdge_ is an edge representing the remainder
   // of our path below that covering node.
-  std::size_t curPathNodeChild_;
-  NodeEdge curPathNodeEdge_;
+  std::size_t curPathNodeChild_{NO_CHILD};
+  NodeEdge curPathNodeEdge_{};
 
   inline Node getChildNode(std::size_t child) const;
   inline NodeEdge edgeMatch() const;
@@ -231,6 +231,7 @@ public:
   using NodeValueRO = typename CursorROType::NodeValueRO;
   using NodeValue = Mapper::RadixTree::NodeValue<Node>;
   using PathType = PathT;
+  using CursorROType::NO_CHILD;
 
   Cursor(Allocator& a,NodeImplRef root) : CursorROType(a,root) {}
   Cursor(const Cursor& other) = default;
@@ -321,7 +322,7 @@ bool CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goChild(std::size_t chil
       NodePos newPos(childNodeRef,pos.depth + curDepthBelow + 1);
       nodeStack_.push_back(newPos);
       curPathNodeEdge_.clear();
-      curPathNodeChild_ = std::numeric_limits<std::size_t>::max();
+      curPathNodeChild_ = NO_CHILD;
     }
   }
 
@@ -346,7 +347,7 @@ bool CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goParent() {
       // We just popped up into another node - clear our edge
       // and the node that owns the edge along the node path
       curPathNodeEdge_.clear();
-      curPathNodeChild_ = std::numeric_limits<std::size_t>::max();
+      curPathNodeChild_ = NO_CHILD;
     } else {
       // We're still below the node above so update our current
       // edge to match - one back from the end. 
@@ -356,7 +357,7 @@ bool CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::goParent() {
     }
   } else if (depthBelow == 1) {
     // We're popping up into a node - no longer have a node responsible for our edge
-    curPathNodeChild_ = std::numeric_limits<std::size_t>::max();
+    curPathNodeChild_ = NO_CHILD;
     curPathNodeEdge_.clear();
   } else if (depthBelow <= (curPathNodeEdge_.capacity()+1)) {
     // We're within range of our edge tracking so update it.
@@ -377,7 +378,7 @@ CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::getChildNode(std::size_t chil
   if (depthBelow == 0) { return Node{alloc_,back.getChild(child)}; }
   // Check the child at which we jump off the current covering node
   NodeImplRef childNodeRef = Allocator::nullRef;
-  if (curPathNodeChild_ != std::numeric_limits<std::size_t>::max()) {
+  if (curPathNodeChild_ != NO_CHILD) {
     childNodeRef = back.getChild(curPathNodeChild_);
   }
   if (childNodeRef == Allocator::nullRef) {
@@ -408,7 +409,7 @@ CursorRO<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::edgeMatch() const {
   // If we're at or one below then we can't be inside an edge
   if (depthBelow < 2) { return NodeEdge(); }
   NodeImplRef edgeNodeRef = Allocator::nullRef;
-  if (curPathNodeChild_ != std::numeric_limits<std::size_t>::max()) {
+  if (curPathNodeChild_ != NO_CHILD) {
     edgeNodeRef = backNode().getChild(curPathNodeChild_);
   }
   // If we've got no edge handling node then we also can't be inside an edge
@@ -524,7 +525,7 @@ Cursor<R,MaxDepth,Alloc,NodeT,PathT,NodeStackT>::addNode()
   }
   // We're now at a node, reset our edge
   CursorROType::curPathNodeEdge_.clear();
-  CursorROType::curPathNodeChild_ = std::numeric_limits<std::size_t>::max();
+  CursorROType::curPathNodeChild_ = NO_CHILD;
   return nodeValue();
 }
 
