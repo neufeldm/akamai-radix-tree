@@ -251,7 +251,7 @@ TEST(BinaryPath, TrimFront) {
    /* Test that continual calls to trim_back for the length of original
     * binary path will yield empty path
     */
-   BinaryPath<16> p5;
+  BinaryPath<16> p5;
   p5.fromBinaryString(binaryStr);
   int init_size = p5.size();
   for (int i = 0; i < init_size; i++){
@@ -308,6 +308,30 @@ TEST(BinaryPath, TrimBack) {
     p5.trim_back(1);
   }
   ASSERT_EQ(p5.size(), 0);
+}
+
+TEST(BinaryPath, CoveredMatching) {
+
+  /*
+   * Test the "bits matching" method.
+   */
+  BinaryPath<16> p1,p2;
+  p1.fromBinaryString("1001110011111111");
+  p2.fromBinaryString("1000000");
+  ASSERT_EQ(p1.matching(p2),3);
+  ASSERT_EQ(p1.matching(p1),p1.size());
+  ASSERT_EQ(p2.matching(p2),p2.size());
+
+  BinaryPath<32> p3,p4;
+  p3.fromBinaryString("00000001.00000000.00000000");
+  p4.fromBinaryString("00000001.00000000.000001");
+  ASSERT_EQ(p4.matching(p3),21);
+  ASSERT_EQ(p3.matching(p4),21);
+  ASSERT_FALSE(p4.coveredby(p3));
+
+  p3.fromBinaryString("01010101.10");
+  p4.fromBinaryString("01010101.1010");
+  ASSERT_EQ(p3.matching(p4),10);
 }
 
 int main(int argc, char** argv) {

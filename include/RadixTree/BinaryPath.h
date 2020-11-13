@@ -214,6 +214,7 @@ std::size_t BinaryPath<MaxDepth>::matching(const BinaryPath<MaxDepth>& other) co
       --matchLen;
       tmp >>= 1;
     }
+    ++atByte;
   }
   return std::min(matchLen,maxMatchLen);
 }
