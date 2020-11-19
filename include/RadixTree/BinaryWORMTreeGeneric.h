@@ -157,6 +157,7 @@ public:
   using PathType = PathT;
   using CursorROType = BinaryWORMCursorROGeneric<PathT,ValueT>;
   using CursorType = CursorROType;
+  using WalkCursorROType = CursorROType;
   using LookupCursorROType = CursorROType;
   using ValueTypeRO = typename CursorROType::ValueType;
   using ValueType = ValueTypeRO;
@@ -177,6 +178,7 @@ public:
   using PathType = PathT;
   using CursorROType = BinaryWORMCursorROGeneric<PathT,ValueT>;
   using CursorType = CursorROType;
+  using WalkCursorROType = CursorROType;
   using LookupCursorROType = CursorROType;
   using ValueTypeRO = typename CursorROType::ValueType;
   using ValueType = ValueTypeRO;
