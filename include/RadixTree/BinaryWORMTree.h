@@ -46,6 +46,7 @@ public:
   using PathType = PathT;
   using CursorROType = BinaryWORMCursorRO<PathT,BinaryWORMNodeHeaderT,SimpleFixedDepthStack>;
   using CursorType = CursorROType;
+  using WalkCursorROType = CursorROType;
   using LookupCursorROType = BinaryWORMLookupCursorRO<PathT,BinaryWORMNodeHeaderT>;
   using ValueTypeRO = typename CursorROType::ValueType;
   using ValueType = ValueTypeRO;
