@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <stdint.h>
 #include <cstddef>
+#include <type_traits>
 
 namespace Akamai {
 namespace Mapper {
@@ -42,12 +43,26 @@ void cursorGoto(CursorType&& c,PathType&& p) {
  * \brief Return the node value object at path, leaves cursor at position.
  */
 template <typename CursorType,typename PathType>
-typename CursorType::NodeValue
+typename std::decay<CursorType>::type::NodeValue
 cursorGotoValue(CursorType&& c,PathType&& p) {
   cursorGoto(std::forward<CursorType>(c),std::forward<PathType>(p));
   return c.nodeValue();
 }
 
+/**
+ * \brief Move cursor along the specified path until it either reaches a leaf node or the end of the path.
+ *
+ * Returns the covering node value.
+ */
+template <typename CursorType,typename PathType>
+typename std::decay<CursorType>::type::NodeValue
+cursorLookupCoveringValueRO(CursorType&& c,PathType&& p) {
+  std::size_t curDepth{0},size = p.size();
+  while ((curDepth < size) && c.canGoChildNode(p[curDepth])) {
+    c.goChild(p[curDepth++]);
+  }
+  return c.coveringNodeValueRO();
+}
 
 /**
  * \brief Move cursor along the specified path, stop when at the covering value for that path.
@@ -60,8 +75,8 @@ std::size_t cursorGotoCovering(CursorType&& c,PathType&& p) {
     c.goChild(p[curDepth++]);
     if (c.atValue()) { valDepth = curDepth; }
   }
-  // The tree structure may have extra nodes (without values)
-  // below the covering value - wind back up the tree to make the
+  // The tree structure may have values or extra nodes (without values)
+  // below this covering value - wind back up the tree to make the
   // cursor position match.
   while (curDepth > valDepth) { c.goParent(); --curDepth; }
   return valDepth;
@@ -71,7 +86,7 @@ std::size_t cursorGotoCovering(CursorType&& c,PathType&& p) {
  * \brief Move cursor to covering value position, return node value, leave cursor at position.
  */
 template <typename CursorType,typename PathType>
-typename CursorType::NodeValue
+typename std::decay<CursorType>::type::NodeValue
 cursorGotoCoveringValue(CursorType&& c,PathType&& p) {
   cursorGotoCovering(std::forward<CursorType>(c),std::forward<PathType>(p));
   return c.nodeValue();

@@ -136,14 +136,14 @@ public:
   ValueDepth<ValueT> lookupValueDepth(const uint8_t* addrBits,std::size_t prefixLength) const {
     // Hop down the top-level tree as long as there's a potential value we might find.
     BinaryPathWrapRO<HopBits,HopDepth> hopPath(addrBits,prefixLength/HopBits,0);
-    auto hopCursor = hopTree_.lookupCursorRO();
+    auto hopCursor = hopTree_.walkCursorRO();
     std::size_t hopCount = Akamai::Mapper::RadixTree::cursorGotoCovering(hopCursor,hopPath);
     // No covering value in the toplevel tree means we're done.
     if (!hopCursor.atValue()) { return ValueDepth<ValueT>(); }
 
     // Now we need to look for our covering value in the step tree.
     auto hopCursorValue = hopCursor.nodeValueRO();
-    auto stepCursor = hopCursorValue.getPtrRO()->lookupCursorRO();
+    auto stepCursor = hopCursorValue.getPtrRO()->walkCursorRO();
     const std::size_t bitsHopped = hopCount*HopBits;
     BinaryPathWrapRO<1,MaxDepth> stepPath(addrBits,prefixLength,bitsHopped);
     std::size_t stepCount = Akamai::Mapper::RadixTree::cursorGotoCovering(stepCursor,stepPath);
