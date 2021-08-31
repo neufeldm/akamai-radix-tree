@@ -111,15 +111,17 @@ public:
   ValueDepth<ValueT> lookupValueDepth(const uint8_t* addrBits,std::size_t prefixLength) const {
     WrapBytesAsPathRO<MaxDepth> p(addrBits,prefixLength);
     auto c = tree_.lookupCursorRO();
-    std::size_t d = cursorGotoCovering(c,p);
-    if (!c.atValue()) { return ValueDepth<ValueT>(); }
-    return ValueDepth<ValueT>(*(c.nodeValueRO().getPtrRO()),d);
+    cursorGoto(c,p);
+    auto v = c.coveringNodeValueRO();
+    std::size_t d = c.coveringNodeValueDepth();
+    return ValueDepth<ValueT>(*(v.getPtrRO()),d);
   }
 
   // This is just like lookupValueDepth but ignores the depth - basically a convenience function
   // if you don't care about the depth.
   ValueT lookupValue(const uint8_t* addrBits,std::size_t prefixLength) const {
-    return lookupValueDepth(addrBits,prefixLength).value;
+    auto v = cursorLookupCoveringValueRO(tree_.lookupCursorRO(),addrBits,prefixLength);
+    return *(v.getPtrRO());
   }
 
 private:
